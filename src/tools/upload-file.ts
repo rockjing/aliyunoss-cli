@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 文件上传工具
  * 
  * @fileoverview 文件上传功能的MCP工具实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

@@ -34,11 +34,11 @@
 
 ```bash
 # 安装
-npm install -g alioss-mcp
+npm install -g aigroup-aliyunoss-mcp
 
 # 验证安装
-alioss-mcp --version
-alioss-mcp --help
+aigroup-aliyunoss-mcp --version
+aigroup-aliyunoss-mcp --help
 ```
 
 **优点**:
@@ -54,11 +54,11 @@ alioss-mcp --help
 
 ```bash
 # 直接运行，无需安装
-npx alioss-mcp --help
-npx alioss-mcp --stdio
+npx aigroup-aliyunoss-mcp --help
+npx aigroup-aliyunoss-mcp --stdio
 
 # 指定版本运行
-npx alioss-mcp@latest --stdio
+npx aigroup-aliyunoss-mcp@latest --stdio
 ```
 
 **优点**:
@@ -74,13 +74,13 @@ npx alioss-mcp@latest --stdio
 
 ```bash
 # 添加到项目依赖
-npm install alioss-mcp
+npm install aigroup-aliyunoss-mcp
 
 # package.json scripts
 {
   "scripts": {
-    "mcp": "alioss-mcp --stdio",
-    "mcp:health": "alioss-mcp --health"
+    "mcp": "aigroup-aliyunoss-mcp --stdio",
+    "mcp:health": "aigroup-aliyunoss-mcp --health"
   }
 }
 
@@ -122,7 +122,7 @@ MCP_ALLOWED_EXTENSIONS=.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt,.md
 
 # 日志配置
 MCP_LOG_LEVEL=info
-MCP_TEMP_DIR=/tmp/alioss-mcp
+MCP_TEMP_DIR=/tmp/aigroup-aliyunoss-mcp
 
 # 分片上传配置
 MULTIPART_THRESHOLD=10
@@ -138,7 +138,7 @@ CACHE_MAX_SIZE=1000
 
 ```bash
 # 验证配置
-npx alioss-mcp --validate-config
+npx aigroup-aliyunoss-mcp --validate-config
 
 # 输出示例
 ✅ OSS连接配置有效
@@ -164,7 +164,7 @@ npx alioss-mcp --validate-config
 1. 进入 [RAM访问控制台](https://ram.console.aliyun.com/)
 2. 点击"用户" → "创建用户"
 3. 配置用户信息:
-   - **登录名称**: `alioss-mcp-user`
+   - **登录名称**: `aigroup-aliyunoss-mcp-user`
    - **显示名称**: `阿里云OSS MCP服务用户`
    - **访问方式**: 勾选"编程访问"
 
@@ -217,7 +217,7 @@ npx alioss-mcp --validate-config
 1. **环境变量** - 系统环境变量
 2. **命令行参数** - CLI传入的参数
 3. **本地.env文件** - 项目根目录的.env文件
-4. **全局配置文件** - ~/.alioss-mcp/config.json
+4. **全局配置文件** - ~/.aigroup-aliyunoss-mcp/config.json
 5. **默认配置** - 代码中的默认值
 
 ## 🔌 MCP集成
@@ -235,9 +235,9 @@ npx alioss-mcp --validate-config
 ```json
 {
   "mcpServers": {
-    "alioss-mcp": {
+    "aigroup-aliyunoss-mcp": {
       "command": "npx",
-      "args": ["alioss-mcp", "--stdio"],
+      "args": ["aigroup-aliyunoss-mcp", "--stdio"],
       "env": {
         "OSS_ACCESS_KEY_ID": "LTAI5tXXXXXXXXXXXXXX",
         "OSS_ACCESS_KEY_SECRET": "y0p2XXXXXXXXXXXXXXXXXXXXXXXX",
@@ -258,9 +258,9 @@ npx alioss-mcp --validate-config
 ```json
 {
   "mcpServers": {
-    "alioss-mcp": {
+    "aigroup-aliyunoss-mcp": {
       "command": "npx",
-      "args": ["alioss-mcp", "--stdio"],
+      "args": ["aigroup-aliyunoss-mcp", "--stdio"],
       "env": {
         "OSS_ACCESS_KEY_ID": "LTAI5tXXXXXXXXXXXXXX",
         "OSS_ACCESS_KEY_SECRET": "y0p2XXXXXXXXXXXXXXXXXXXXXXXX",
@@ -295,9 +295,9 @@ npx alioss-mcp --validate-config
 ```json
 {
   "mcpServers": {
-    "alioss-mcp": {
+    "aigroup-aliyunoss-mcp": {
       "command": "node",
-      "args": ["/usr/local/lib/node_modules/alioss-mcp/build/index.js"],
+      "args": ["/usr/local/lib/node_modules/aigroup-aliyunoss-mcp/build/index.js"],
       "env": {
         "OSS_ACCESS_KEY_ID": "your_key_id",
         "OSS_ACCESS_KEY_SECRET": "your_key_secret",
@@ -317,7 +317,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 const transport = new StdioClientTransport({
   command: 'npx',
-  args: ['alioss-mcp', '--stdio'],
+  args: ['aigroup-aliyunoss-mcp', '--stdio'],
   env: {
     OSS_ACCESS_KEY_ID: 'your_key_id',
     OSS_ACCESS_KEY_SECRET: 'your_key_secret',
@@ -348,8 +348,8 @@ FROM node:18-alpine
 # 设置工作目录
 WORKDIR /app
 
-# 安装alioss-mcp
-RUN npm install -g alioss-mcp
+# 安装aigroup-aliyunoss-mcp
+RUN npm install -g aigroup-aliyunoss-mcp
 
 # 创建非root用户
 RUN addgroup -g 1001 -S nodejs
@@ -360,26 +360,26 @@ USER alioss
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD alioss-mcp --health || exit 1
+  CMD aigroup-aliyunoss-mcp --health || exit 1
 
 # 启动命令
-CMD ["alioss-mcp", "--stdio"]
+CMD ["aigroup-aliyunoss-mcp", "--stdio"]
 ```
 
 #### 构建和运行
 
 ```bash
 # 构建镜像
-docker build -t alioss-mcp:latest .
+docker build -t aigroup-aliyunoss-mcp:latest .
 
 # 运行容器
 docker run -d \
-  --name alioss-mcp \
+  --name aigroup-aliyunoss-mcp \
   -e OSS_ACCESS_KEY_ID=your_key_id \
   -e OSS_ACCESS_KEY_SECRET=your_key_secret \
   -e OSS_BUCKET=your_bucket \
   -e OSS_REGION=oss-cn-beijing \
-  alioss-mcp:latest
+  aigroup-aliyunoss-mcp:latest
 ```
 
 ### 2. Docker Compose部署
@@ -390,9 +390,9 @@ docker run -d \
 version: '3.8'
 
 services:
-  alioss-mcp:
-    image: alioss-mcp:latest
-    container_name: alioss-mcp
+  aigroup-aliyunoss-mcp:
+    image: aigroup-aliyunoss-mcp:latest
+    container_name: aigroup-aliyunoss-mcp
     restart: unless-stopped
     environment:
       - OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}
@@ -403,7 +403,7 @@ services:
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "alioss-mcp", "--health"]
+      test: ["CMD", "aigroup-aliyunoss-mcp", "--health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -431,7 +431,7 @@ OSS_REGION=oss-cn-beijing
 docker-compose up -d
 
 # 查看日志
-docker-compose logs -f alioss-mcp
+docker-compose logs -f aigroup-aliyunoss-mcp
 
 # 停止服务
 docker-compose down
@@ -443,7 +443,7 @@ docker-compose down
 
 #### Systemd服务 (Linux)
 
-创建服务文件: `/etc/systemd/system/alioss-mcp.service`
+创建服务文件: `/etc/systemd/system/aigroup-aliyunoss-mcp.service`
 
 ```ini
 [Unit]
@@ -453,15 +453,15 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=alioss-mcp
-Group=alioss-mcp
-WorkingDirectory=/opt/alioss-mcp
-ExecStart=/usr/bin/node /usr/local/lib/node_modules/alioss-mcp/build/index.js --stdio
+User=aigroup-aliyunoss-mcp
+Group=aigroup-aliyunoss-mcp
+WorkingDirectory=/opt/aigroup-aliyunoss-mcp
+ExecStart=/usr/bin/node /usr/local/lib/node_modules/aigroup-aliyunoss-mcp/build/index.js --stdio
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=alioss-mcp
+SyslogIdentifier=aigroup-aliyunoss-mcp
 
 # 环境变量
 Environment=OSS_ACCESS_KEY_ID=your_key_id
@@ -475,7 +475,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/alioss-mcp/logs
+ReadWritePaths=/opt/aigroup-aliyunoss-mcp/logs
 
 [Install]
 WantedBy=multi-user.target
@@ -488,16 +488,16 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 
 # 启动服务
-sudo systemctl start alioss-mcp
+sudo systemctl start aigroup-aliyunoss-mcp
 
 # 设置开机自启
-sudo systemctl enable alioss-mcp
+sudo systemctl enable aigroup-aliyunoss-mcp
 
 # 查看服务状态
-sudo systemctl status alioss-mcp
+sudo systemctl status aigroup-aliyunoss-mcp
 
 # 查看服务日志
-sudo journalctl -u alioss-mcp -f
+sudo journalctl -u aigroup-aliyunoss-mcp -f
 ```
 
 ### 2. PM2进程管理
@@ -513,8 +513,8 @@ npm install -g pm2
 ```javascript
 module.exports = {
   apps: [{
-    name: 'alioss-mcp',
-    script: '/usr/local/lib/node_modules/alioss-mcp/build/index.js',
+    name: 'aigroup-aliyunoss-mcp',
+    script: '/usr/local/lib/node_modules/aigroup-aliyunoss-mcp/build/index.js',
     args: '--stdio',
     instances: 1,
     autorestart: true,
@@ -528,9 +528,9 @@ module.exports = {
       OSS_REGION: 'oss-cn-beijing',
       MCP_LOG_LEVEL: 'info'
     },
-    log_file: '/var/log/alioss-mcp/combined.log',
-    out_file: '/var/log/alioss-mcp/out.log',
-    error_file: '/var/log/alioss-mcp/error.log',
+    log_file: '/var/log/aigroup-aliyunoss-mcp/combined.log',
+    out_file: '/var/log/aigroup-aliyunoss-mcp/out.log',
+    error_file: '/var/log/aigroup-aliyunoss-mcp/error.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
   }]
 };
@@ -546,13 +546,13 @@ pm2 start ecosystem.config.js
 pm2 status
 
 # 查看日志
-pm2 logs alioss-mcp
+pm2 logs aigroup-aliyunoss-mcp
 
 # 重启应用
-pm2 restart alioss-mcp
+pm2 restart aigroup-aliyunoss-mcp
 
 # 停止应用
-pm2 stop alioss-mcp
+pm2 stop aigroup-aliyunoss-mcp
 
 # 设置开机自启
 pm2 startup
@@ -572,7 +572,7 @@ upstream alioss_mcp {
 
 server {
     listen 80;
-    server_name alioss-mcp.yourdomain.com;
+    server_name aigroup-aliyunoss-mcp.yourdomain.com;
 
     location / {
         proxy_pass http://alioss_mcp;
@@ -611,7 +611,7 @@ server {
 # health-check.sh
 
 HEALTH_ENDPOINT="http://localhost:3000/health"
-LOG_FILE="/var/log/alioss-mcp/health.log"
+LOG_FILE="/var/log/aigroup-aliyunoss-mcp/health.log"
 
 # 执行健康检查
 RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/health_response "$HEALTH_ENDPOINT")
@@ -622,7 +622,7 @@ if [ "$HTTP_CODE" -eq 200 ]; then
 else
     echo "$(date): Health check failed with code $HTTP_CODE" >> "$LOG_FILE"
     # 发送告警通知
-    /usr/local/bin/send-alert.sh "alioss-mcp health check failed"
+    /usr/local/bin/send-alert.sh "aigroup-aliyunoss-mcp health check failed"
 fi
 ```
 
@@ -631,29 +631,29 @@ fi
 ```bash
 # 添加到crontab
 # 每分钟执行健康检查
-* * * * * /opt/alioss-mcp/scripts/health-check.sh
+* * * * * /opt/aigroup-aliyunoss-mcp/scripts/health-check.sh
 
 # 每小时清理日志
-0 * * * * find /var/log/alioss-mcp -name "*.log" -mtime +7 -delete
+0 * * * * find /var/log/aigroup-aliyunoss-mcp -name "*.log" -mtime +7 -delete
 ```
 
 ### 2. 日志管理
 
 #### 日志轮转 (logrotate)
 
-创建配置文件: `/etc/logrotate.d/alioss-mcp`
+创建配置文件: `/etc/logrotate.d/aigroup-aliyunoss-mcp`
 
 ```
-/var/log/alioss-mcp/*.log {
+/var/log/aigroup-aliyunoss-mcp/*.log {
     daily
     missingok
     rotate 30
     compress
     delaycompress
     notifempty
-    create 644 alioss-mcp alioss-mcp
+    create 644 aigroup-aliyunoss-mcp aigroup-aliyunoss-mcp
     postrotate
-        /bin/kill -USR1 $(cat /var/run/alioss-mcp.pid 2>/dev/null) 2>/dev/null || true
+        /bin/kill -USR1 $(cat /var/run/aigroup-aliyunoss-mcp.pid 2>/dev/null) 2>/dev/null || true
     endscript
 }
 ```
@@ -667,9 +667,9 @@ filebeat.inputs:
 - type: log
   enabled: true
   paths:
-    - /var/log/alioss-mcp/*.log
+    - /var/log/aigroup-aliyunoss-mcp/*.log
   fields:
-    service: alioss-mcp
+    service: aigroup-aliyunoss-mcp
     environment: production
   multiline.pattern: '^\{'
   multiline.negate: true
@@ -677,7 +677,7 @@ filebeat.inputs:
 
 output.elasticsearch:
   hosts: ["localhost:9200"]
-  index: "alioss-mcp-%{+yyyy.MM.dd}"
+  index: "aigroup-aliyunoss-mcp-%{+yyyy.MM.dd}"
 
 logging.level: info
 logging.to_files: true
@@ -698,7 +698,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'alioss-mcp'
+  - job_name: 'aigroup-aliyunoss-mcp'
     static_configs:
       - targets: ['localhost:3000']
     metrics_path: /metrics
@@ -726,11 +726,11 @@ scrape_configs:
 **解决方案**:
 ```bash
 # 检查文件权限
-ls -la /usr/local/lib/node_modules/alioss-mcp
+ls -la /usr/local/lib/node_modules/aigroup-aliyunoss-mcp
 
 # 修复权限
-sudo chown -R $(whoami) /usr/local/lib/node_modules/alioss-mcp
-sudo chmod +x /usr/local/lib/node_modules/alioss-mcp/build/index.js
+sudo chown -R $(whoami) /usr/local/lib/node_modules/aigroup-aliyunoss-mcp
+sudo chmod +x /usr/local/lib/node_modules/aigroup-aliyunoss-mcp/build/index.js
 ```
 
 #### 问题 2: 端口冲突
@@ -764,7 +764,7 @@ export OSS_ACCESS_KEY_ID=your_key_id
 export OSS_ACCESS_KEY_SECRET=your_key_secret
 
 # 验证配置
-npx alioss-mcp --validate-config
+npx aigroup-aliyunoss-mcp --validate-config
 ```
 
 ### 2. 性能问题诊断
@@ -773,7 +773,7 @@ npx alioss-mcp --validate-config
 
 ```bash
 # 使用Node.js内置性能分析
-node --inspect /usr/local/lib/node_modules/alioss-mcp/build/index.js
+node --inspect /usr/local/lib/node_modules/aigroup-aliyunoss-mcp/build/index.js
 
 # 生成heap快照
 kill -USR2 <PID>
@@ -802,17 +802,17 @@ ping oss-cn-beijing.aliyuncs.com
 
 ```bash
 # 统计错误类型
-grep "ERROR" /var/log/alioss-mcp/*.log | \
+grep "ERROR" /var/log/aigroup-aliyunoss-mcp/*.log | \
   grep -o '"code":"[^"]*"' | \
   sort | uniq -c | sort -nr
 
 # 分析响应时间
-grep "duration" /var/log/alioss-mcp/*.log | \
+grep "duration" /var/log/aigroup-aliyunoss-mcp/*.log | \
   grep -o '"duration":[0-9]*' | \
   awk -F: '{sum+=$2; count++} END {print "Average:", sum/count "ms"}'
 
 # 查找超时请求
-grep "timeout" /var/log/alioss-mcp/*.log | \
+grep "timeout" /var/log/aigroup-aliyunoss-mcp/*.log | \
   grep -o '"toolName":"[^"]*"' | \
   sort | uniq -c
 ```
@@ -828,27 +828,27 @@ grep "timeout" /var/log/alioss-mcp/*.log | \
 echo "开始紧急恢复程序..."
 
 # 1. 停止服务
-sudo systemctl stop alioss-mcp
-pm2 stop alioss-mcp
+sudo systemctl stop aigroup-aliyunoss-mcp
+pm2 stop aigroup-aliyunoss-mcp
 
 # 2. 备份当前版本
-sudo cp -r /usr/local/lib/node_modules/alioss-mcp \
-  /backup/alioss-mcp-$(date +%Y%m%d_%H%M%S)
+sudo cp -r /usr/local/lib/node_modules/aigroup-aliyunoss-mcp \
+  /backup/aigroup-aliyunoss-mcp-$(date +%Y%m%d_%H%M%S)
 
 # 3. 重新安装最新版本
-sudo npm uninstall -g alioss-mcp
-sudo npm install -g alioss-mcp@latest
+sudo npm uninstall -g aigroup-aliyunoss-mcp
+sudo npm install -g aigroup-aliyunoss-mcp@latest
 
 # 4. 验证配置
-alioss-mcp --validate-config
+aigroup-aliyunoss-mcp --validate-config
 
 # 5. 重启服务
-sudo systemctl start alioss-mcp
-pm2 start alioss-mcp
+sudo systemctl start aigroup-aliyunoss-mcp
+pm2 start aigroup-aliyunoss-mcp
 
 # 6. 验证服务状态
 sleep 10
-alioss-mcp --health
+aigroup-aliyunoss-mcp --health
 
 echo "紧急恢复完成!"
 ```
@@ -858,9 +858,9 @@ echo "紧急恢复完成!"
 ```bash
 # 备份配置文件
 tar -czf config-backup-$(date +%Y%m%d).tar.gz \
-  ~/.alioss-mcp/ \
-  /etc/systemd/system/alioss-mcp.service \
-  /opt/alioss-mcp/
+  ~/.aigroup-aliyunoss-mcp/ \
+  /etc/systemd/system/aigroup-aliyunoss-mcp.service \
+  /opt/aigroup-aliyunoss-mcp/
 
 # 恢复配置文件
 tar -xzf config-backup-20250818.tar.gz -C /
@@ -870,4 +870,4 @@ tar -xzf config-backup-20250818.tar.gz -C /
 
 **部署指南版本**: v1.0.0  
 **最后更新**: 2025-08-18  
-**适用版本**: alioss-mcp v1.0.0+
+**适用版本**: aigroup-aliyunoss-mcp v1.0.0+

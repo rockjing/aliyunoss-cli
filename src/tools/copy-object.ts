@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 文件复制工具
  * 
  * @fileoverview 复制文件的MCP工具实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

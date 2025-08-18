@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 配置管理器
  * 
  * @fileoverview 配置加载、验证和管理的核心实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

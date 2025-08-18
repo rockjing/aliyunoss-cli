@@ -2,7 +2,7 @@
 
 ## 📋 文档信息
 
-- **项目名称**: alioss-mcp
+- **项目名称**: aigroup-aliyunoss-mcp
 - **版本**: 1.0.0
 - **创建日期**: 2025-08-18
 - **文档类型**: 系统架构设计
@@ -67,7 +67,7 @@ graph TB
 ## 📁 项目目录结构
 
 ```
-alioss-mcp/
+aigroup-aliyunoss-mcp/
 ├── package.json              # npm包配置和脚本
 ├── tsconfig.json            # TypeScript编译配置
 ├── README.md                # 项目说明文档
@@ -409,10 +409,10 @@ interface HealthStatus {
 
 ```json
 {
-  "name": "alioss-mcp",
+  "name": "aigroup-aliyunoss-mcp",
   "version": "1.0.0",
   "bin": {
-    "alioss-mcp": "build/index.js"
+    "aigroup-aliyunoss-mcp": "build/index.js"
   },
   "files": [
     "build/**/*",
@@ -427,13 +427,13 @@ interface HealthStatus {
 
 ```bash
 # 全局安装
-npm install -g alioss-mcp
+npm install -g aigroup-aliyunoss-mcp
 
 # 临时运行
-npx alioss-mcp --stdio
+npx aigroup-aliyunoss-mcp --stdio
 
 # 项目依赖
-npm install alioss-mcp
+npm install aigroup-aliyunoss-mcp
 ```
 
 ### 3. MCP配置
@@ -441,9 +441,9 @@ npm install alioss-mcp
 ```json
 {
   "mcpServers": {
-    "alioss-mcp": {
+    "aigroup-aliyunoss-mcp": {
       "command": "npx",
-      "args": ["alioss-mcp", "--stdio"],
+      "args": ["aigroup-aliyunoss-mcp", "--stdio"],
       "env": {
         "OSS_ACCESS_KEY_ID": "your_key_id",
         "OSS_ACCESS_KEY_SECRET": "your_key_secret",
@@ -527,8 +527,8 @@ CMD ["node", "build/index.js", "--stdio"]
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-org/alioss-mcp.git
-cd alioss-mcp
+git clone https://github.com/your-org/aigroup-aliyunoss-mcp.git
+cd aigroup-aliyunoss-mcp
 
 # 安装依赖
 npm install
@@ -565,10 +565,10 @@ git commit -m "docs: 更新API文档"
 
 ### 项目信息
 
-- **仓库地址**: https://github.com/your-org/alioss-mcp
-- **文档站点**: https://your-org.github.io/alioss-mcp
-- **npm包页**: https://www.npmjs.com/package/alioss-mcp
-- **问题反馈**: https://github.com/your-org/alioss-mcp/issues
+- **仓库地址**: https://github.com/your-org/aigroup-aliyunoss-mcp
+- **文档站点**: https://your-org.github.io/aigroup-aliyunoss-mcp
+- **npm包页**: https://www.npmjs.com/package/aigroup-aliyunoss-mcp
+- **问题反馈**: https://github.com/your-org/aigroup-aliyunoss-mcp/issues
 
 ### 维护团队
 

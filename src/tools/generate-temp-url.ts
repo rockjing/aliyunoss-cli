@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 临时URL生成工具
  * 
  * @fileoverview 生成临时访问链接的MCP工具实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

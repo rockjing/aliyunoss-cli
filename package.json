@@ -1,6 +1,6 @@
 {
   "name": "aigroup-aliyunoss-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "阿里云OSS MCP服务器 - 为阿里云对象存储服务提供的MCP (Model Context Protocol) 服务器",
   "type": "module",
   "main": "build/index.js",

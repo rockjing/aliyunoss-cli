@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 存储模块导出
  * 
  * @fileoverview 存储服务相关功能的统一导出
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

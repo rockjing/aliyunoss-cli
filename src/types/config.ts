@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 配置相关类型定义
  * 
  * @fileoverview 定义配置管理相关的接口和类型
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - MCP服务器核心
  * 
  * @fileoverview MCP服务器的核心实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

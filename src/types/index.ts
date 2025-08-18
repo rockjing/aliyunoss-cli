@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 通用类型定义
  * 
  * @fileoverview 定义系统中使用的通用类型、接口和枚举
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

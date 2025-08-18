@@ -1,8 +1,8 @@
 # 阿里云OSS MCP服务器
 
-[![npm version](https://badge.fury.io/js/alioss-mcp.svg)](https://badge.fury.io/js/alioss-mcp)
-[![Node.js CI](https://github.com/your-org/alioss-mcp/workflows/Node.js%20CI/badge.svg)](https://github.com/your-org/alioss-mcp/actions)
-[![codecov](https://codecov.io/gh/your-org/alioss-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/alioss-mcp)
+[![npm version](https://badge.fury.io/js/aigroup-aliyunoss-mcp.svg)](https://badge.fury.io/js/aigroup-aliyunoss-mcp)
+[![Node.js CI](https://github.com/your-org/aigroup-aliyunoss-mcp/workflows/Node.js%20CI/badge.svg)](https://github.com/your-org/aigroup-aliyunoss-mcp/actions)
+[![codecov](https://codecov.io/gh/your-org/aigroup-aliyunoss-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/aigroup-aliyunoss-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 🚀 为阿里云OSS (Object Storage Service) 提供的MCP (Model Context Protocol) 服务器，支持完整的云存储操作功能。
@@ -24,10 +24,10 @@
 
 ```bash
 # 全局安装
-npm install -g alioss-mcp
+npm install -g aigroup-aliyunoss-mcp
 
 # 或者使用 npx 临时运行
-npx alioss-mcp --help
+npx aigroup-aliyunoss-mcp --help
 ```
 
 ### 2. 配置OSS凭据
@@ -54,9 +54,9 @@ FILE_EXPIRY_HOURS=1
 ```json
 {
   "mcpServers": {
-    "alioss-mcp": {
+    "aigroup-aliyunoss-mcp": {
       "command": "npx",
-      "args": ["alioss-mcp", "--stdio"],
+      "args": ["aigroup-aliyunoss-mcp", "--stdio"],
       "env": {
         "OSS_ACCESS_KEY_ID": "your_access_key_id",
         "OSS_ACCESS_KEY_SECRET": "your_access_key_secret",
@@ -72,13 +72,13 @@ FILE_EXPIRY_HOURS=1
 
 ```bash
 # 健康检查
-npx alioss-mcp --health
+npx aigroup-aliyunoss-mcp --health
 
 # 查看帮助
-npx alioss-mcp --help
+npx aigroup-aliyunoss-mcp --help
 
 # 验证配置
-npx alioss-mcp --validate-config
+npx aigroup-aliyunoss-mcp --validate-config
 ```
 
 ## 🔧 配置详解
@@ -197,10 +197,10 @@ npx alioss-mcp --validate-config
 
 ```bash
 # 完整健康检查
-npx alioss-mcp --health
+npx aigroup-aliyunoss-mcp --health
 
 # JSON格式输出
-npx alioss-mcp --health --json
+npx aigroup-aliyunoss-mcp --health --json
 ```
 
 健康检查包括：
@@ -239,8 +239,8 @@ npx alioss-mcp --health --json
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-org/alioss-mcp.git
-cd alioss-mcp
+git clone https://github.com/your-org/aigroup-aliyunoss-mcp.git
+cd aigroup-aliyunoss-mcp
 
 # 安装依赖
 npm install
@@ -259,7 +259,7 @@ npm run dev
 
 ```typescript
 // plugins/my-plugin/index.ts
-import { Plugin, PluginContext } from 'alioss-mcp';
+import { Plugin, PluginContext } from 'aigroup-aliyunoss-mcp';
 
 export default class MyPlugin implements Plugin {
   metadata = {
@@ -344,7 +344,7 @@ const customMiddleware: MiddlewareDefinition = {
 **错误**: `CONFIG_INVALID`
 
 **解决方案**:
-- 运行 `npx alioss-mcp --validate-config`
+- 运行 `npx aigroup-aliyunoss-mcp --validate-config`
 - 检查必需的环境变量
 - 验证配置文件格式
 
@@ -352,17 +352,17 @@ const customMiddleware: MiddlewareDefinition = {
 
 ```bash
 # 启用调试日志
-MCP_LOG_LEVEL=debug npx alioss-mcp --stdio
+MCP_LOG_LEVEL=debug npx aigroup-aliyunoss-mcp --stdio
 
 # 查看详细错误信息
-npx alioss-mcp --health --verbose
+npx aigroup-aliyunoss-mcp --health --verbose
 ```
 
 ### 获取支持
 
-- 📖 [详细文档](https://your-org.github.io/alioss-mcp)
-- 🐛 [问题反馈](https://github.com/your-org/alioss-mcp/issues)
-- 💬 [讨论社区](https://github.com/your-org/alioss-mcp/discussions)
+- 📖 [详细文档](https://your-org.github.io/aigroup-aliyunoss-mcp)
+- 🐛 [问题反馈](https://github.com/your-org/aigroup-aliyunoss-mcp/issues)
+- 💬 [讨论社区](https://github.com/your-org/aigroup-aliyunoss-mcp/discussions)
 - 📧 [邮件支持](mailto:support@your-org.com)
 
 ## 🤝 贡献
@@ -396,6 +396,6 @@ npx alioss-mcp --health --verbose
 
 ---
 
-**Made with ❤️ by the alioss-mcp team**
+**Made with ❤️ by the aigroup-aliyunoss-mcp team**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=your-org/alioss-mcp&type=Date)](https://star-history.com/#your-org/alioss-mcp&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=your-org/aigroup-aliyunoss-mcp&type=Date)](https://star-history.com/#your-org/aigroup-aliyunoss-mcp&Date)

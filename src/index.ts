@@ -4,8 +4,8 @@
  * 阿里云OSS MCP服务 - 主入口文件
  *
  * @fileoverview 应用程序的启动入口点
- * @author alioss-mcp team
- * @version 1.0.0
+ * @author aigroup-aliyunoss-mcp team
+ * @version 1.1.0
  */
 
 // 加载环境变量
@@ -102,7 +102,7 @@ class Application {
    */
   private showHelp(): void {
     console.log(`
-阿里云OSS MCP服务器 v1.0.0
+阿里云OSS MCP服务器 v1.1.0
 
 用法: aigroup-aliyunoss-mcp [选项]
 

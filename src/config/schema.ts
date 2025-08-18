@@ -2,8 +2,8 @@
  * 阿里云OSS MCP服务 - 配置模式定义
  * 
  * @fileoverview 定义配置验证模式和默认值
- * @author alioss-mcp team
- * @version 1.0.0
+ * @author aigroup-aliyunoss-mcp team
+ * @version 1.1.0
  */
 
 import { z } from 'zod';
@@ -30,7 +30,7 @@ export const ossConfigSchema = z.object({
  */
 export const mcpConfigSchema = z.object({
   name: z.string().default('aigroup-aliyunoss-mcp'),
-  version: z.string().default('1.0.0'),
+  version: z.string().default('1.1.0'),
   description: z.string().default('阿里云OSS MCP服务器'),
   protocolVersion: z.string().default('2024-11-05'),
   capabilities: z.object({
@@ -215,7 +215,7 @@ export const cacheConfigSchema = z.object({
     port: z.number().min(1).max(65535).default(6379),
     password: z.string().optional(),
     database: z.number().min(0).default(0),
-    keyPrefix: z.string().default('alioss-mcp:')
+    keyPrefix: z.string().default('aigroup-aliyunoss-mcp:')
   }).optional()
 });
 
@@ -264,7 +264,7 @@ export const monitoringConfigSchema = z.object({
     jaeger: z.object({
       enabled: z.boolean().default(false),
       endpoint: z.string().default('http://localhost:14268/api/traces'),
-      serviceName: z.string().default('alioss-mcp')
+      serviceName: z.string().default('aigroup-aliyunoss-mcp')
     }).optional()
   }).optional()
 });
@@ -350,7 +350,7 @@ export const defaultConfig: AppConfigType = {
   },
   mcp: {
     name: 'aigroup-aliyunoss-mcp',
-    version: '1.0.0',
+    version: '1.1.0',
     description: '阿里云OSS MCP服务器',
     protocolVersion: '2024-11-05',
     capabilities: {

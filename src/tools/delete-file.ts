@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 文件删除工具
  * 
  * @fileoverview 删除文件的MCP工具实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

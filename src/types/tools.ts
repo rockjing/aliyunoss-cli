@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 工具相关类型定义
  * 
  * @fileoverview 定义MCP工具相关的接口和类型
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - OSS存储服务实现
  * 
  * @fileoverview 基于阿里云OSS SDK的存储服务实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

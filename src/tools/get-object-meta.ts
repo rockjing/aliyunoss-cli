@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 获取文件元数据工具
  * 
  * @fileoverview 获取文件元数据的MCP工具实现
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 

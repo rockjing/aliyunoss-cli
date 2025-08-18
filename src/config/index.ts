@@ -2,7 +2,7 @@
  * 阿里云OSS MCP服务 - 配置管理模块导出
  * 
  * @fileoverview 配置管理相关功能的统一导出
- * @author alioss-mcp team
+ * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
 
