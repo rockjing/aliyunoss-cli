@@ -164,3 +164,6 @@ pnpm-lock.yaml
 # Custom
 *.tgz
 *.tar.gz
+
+# Roo configuration directory
+.roo/
