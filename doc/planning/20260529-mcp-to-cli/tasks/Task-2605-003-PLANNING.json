@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0.0",
+  "id": "Task-2605-003",
+  "title": "搭建 aliyunoss-cli 命令框架",
+  "task_type": "新功能",
+  "status": "COMPLETED",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "completed_at": "2026-05-29 20:20:32 CST",
+  "intent": "建立新的 aliyunoss-cli 命令入口、参数解析、输出格式和统一错误处理，为后续命令迁移提供稳定框架。",
+  "scope": {
+    "include": [
+      "新增 src/cli/index.ts 和命令注册结构。",
+      "新增统一输出模块，支持普通文本和 --json。",
+      "新增统一错误处理和退出码映射。",
+      "支持 --help、--version、validate-config、health 等基础命令。",
+      "明确是否保留 --stdio 作为过渡兼容入口。"
+    ],
+    "exclude": [
+      "不在本 Task 迁移所有 OSS 操作命令。",
+      "不移除 MCP SDK 依赖。",
+      "不实现 profile 配置文件全量能力，可预留参数。"
+    ]
+  },
+  "depends_on": [
+    "Task-2605-001",
+    "Task-2605-002"
+  ],
+  "inputs": {
+    "context_files": [
+      "src/index.ts",
+      "src/config/index.ts",
+      "src/config/config.ts",
+      "src/types/index.ts",
+      "package.json"
+    ],
+    "related_docs": [
+      "doc/MCP-migration-cli.md"
+    ],
+    "notes": [
+      "当前 parseArgs 只识别 --stdio、--health、--validate-config、--help。",
+      "package.json bin 当前为 aigroup-aliyunoss-mcp，需要迁移到 aliyunoss-cli。"
+    ]
+  },
+  "implementation_notes": [
+    "参数解析可选轻量库或手写解析；若引入依赖需同步 package.json。",
+    "stdout 只输出命令结果，日志和错误进入 stderr。",
+    "JSON 输出格式建议固定为 success/command/data/error。",
+    "退出码遵循文档：参数错误 2，运行错误 1，取消删除 130。"
+  ],
+  "acceptance_criteria": [
+    "构建后可通过 aliyunoss-cli --help 查看命令说明。",
+    "aliyunoss-cli --version 输出版本。",
+    "aliyunoss-cli validate-config --json 输出结构化且脱敏的结果。",
+    "未知命令返回退出码 2。",
+    "不带命令时展示帮助或给出明确提示。"
+  ],
+  "validation": {
+    "commands": [
+      "npm run typecheck",
+      "npm run build",
+      "node build/cli/index.js --help"
+    ],
+    "manual_checks": [
+      "确认 stdout/stderr 分离。",
+      "确认 --json 错误输出是稳定 JSON。"
+    ]
+  },
+  "risk_level": "medium",
+  "parallelizable": false,
+  "execution_result": {
+    "target_branch": "feature/to-cli",
+    "commit": {
+      "hash": "8bb97a1",
+      "message": "搭建 aliyunoss CLI 命令框架"
+    },
+    "summary": [
+      "新增 src/cli/index.ts、参数解析、命令注册、统一输出、统一错误和退出码。",
+      "实现 help、version、validate-config、health、stdio 兼容入口。",
+      "建立 CLI storage runtime，为后续 OSS 命令迁移复用。"
+    ],
+    "validation": [
+      "npm run typecheck 通过。",
+      "npm run build 通过。",
+      "node build/cli/index.js --help 通过。",
+      "最终全量 npm test 通过，8 个测试套件、42 个用例。"
+    ]
+  },
+  "handoff_prompt": "执行 Task-2605-003：在安全基础任务完成后搭建 aliyunoss-cli CLI 框架，包含命令注册、输出、错误和基础 validate-config/health 命令，不迁移具体 OSS 操作命令。"
+}

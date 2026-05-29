@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "id": "Task-2605-004",
+  "title": "迁移非删除类 OSS 命令",
+  "task_type": "新功能",
+  "status": "COMPLETED",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "completed_at": "2026-05-29 20:20:32 CST",
+  "intent": "将上传、临时 URL、列表、复制和元数据查询能力迁移为 aliyunoss-cli 子命令，并复用 OSSStorageService 和统一校验/输出。",
+  "scope": {
+    "include": [
+      "实现 upload <local-file> --key <object-key>。",
+      "实现 url <object-key> --expires <seconds>。",
+      "实现 list --prefix <prefix> --max-keys <n> --marker <marker> --delimiter <delimiter>。",
+      "实现 copy <source-key> <target-key> --no-overwrite。",
+      "实现 meta <object-key>。",
+      "所有命令支持 --json 输出。"
+    ],
+    "exclude": [
+      "不处理 delete/delete-many。",
+      "不迁移 ACL 或分片上传能力。",
+      "不直接绕过 OSSStorageService 调用 ali-oss。"
+    ]
+  },
+  "depends_on": [
+    "Task-2605-001",
+    "Task-2605-002",
+    "Task-2605-003"
+  ],
+  "inputs": {
+    "context_files": [
+      "src/tools/upload-file.ts",
+      "src/tools/generate-temp-url.ts",
+      "src/tools/list-files.ts",
+      "src/tools/copy-object.ts",
+      "src/tools/get-object-meta.ts",
+      "src/storage/oss-storage.ts",
+      "src/types/tools.ts"
+    ],
+    "related_docs": [
+      "doc/MCP-migration-cli.md"
+    ],
+    "notes": [
+      "现有 uploadFile 支持 Base64 或本地路径；CLI 第一优先使用本地文件路径，Base64 可不作为首期命令参数暴露。",
+      "copyObjectTool 中 metadata 参数目前 schema 有但 handler 未实际使用，迁移时需决定是否实现或暂不暴露。"
+    ]
+  },
+  "implementation_notes": [
+    "建议把 MCP handler 中与协议无关的业务逻辑抽为可复用函数，避免 CLI 和 MCP 双份逻辑。",
+    "上传命令需做本地文件存在、文件大小、content-type 检测。",
+    "list 命令普通文本输出应便于扫描，JSON 输出应保留 objects/prefixes/nextMarker/isTruncated/count。",
+    "copy 默认覆盖或不覆盖的语义需与文档一致，建议保留默认覆盖并支持 --no-overwrite。"
+  ],
+  "acceptance_criteria": [
+    "upload/url/list/copy/meta 五类命令均可从 CLI 调用。",
+    "所有 object key/prefix 参数都经过统一校验。",
+    "每个命令普通输出和 --json 输出都可用。",
+    "错误场景返回正确退出码和脱敏错误信息。",
+    "新增命令级单元测试或集成测试覆盖参数解析和 storage mock 调用。"
+  ],
+  "validation": {
+    "commands": [
+      "npm run typecheck",
+      "npm run build",
+      "npm test -- cli"
+    ],
+    "manual_checks": [
+      "aliyunoss-cli list --prefix documents/ --max-keys 10 --json",
+      "aliyunoss-cli meta documents/report.pdf --json",
+      "aliyunoss-cli copy documents/a.pdf documents/b.pdf --no-overwrite --json"
+    ]
+  },
+  "risk_level": "medium",
+  "parallelizable": false,
+  "execution_result": {
+    "target_branch": "feature/to-cli",
+    "commit": {
+      "hash": "ebe5196",
+      "message": "迁移非删除 OSS CLI 命令"
+    },
+    "summary": [
+      "实现 upload、url、list、copy、meta CLI 命令。",
+      "命令复用 OSSStorageService、统一 object key/prefix 校验和统一输出格式。",
+      "补充 storage mock 命令测试和参数解析覆盖。"
+    ],
+    "validation": [
+      "npm run typecheck 通过。",
+      "npm run build 通过。",
+      "npm test -- cli 通过。",
+      "最终全量 npm test 通过，8 个测试套件、42 个用例。"
+    ]
+  },
+  "handoff_prompt": "执行 Task-2605-004：在 CLI 框架完成后迁移 upload/url/list/copy/meta 命令，复用 OSSStorageService、统一 object key 校验和统一输出格式，补 storage mock 测试。"
+}

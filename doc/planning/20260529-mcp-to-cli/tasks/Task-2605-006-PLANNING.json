@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0.0",
+  "id": "Task-2605-006",
+  "title": "更新打包、文档和验证体系",
+  "task_type": "优化",
+  "status": "COMPLETED",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "completed_at": "2026-05-29 20:20:32 CST",
+  "intent": "完成 CLI 迁移的收尾工作，包括 package bin/scripts/files、README/部署文档、测试命令和 MCP 兼容策略说明。",
+  "scope": {
+    "include": [
+      "更新 package.json bin，将主命令暴露为 aliyunoss-cli。",
+      "按实际实现更新 README 和 doc/DEPLOYMENT.md。",
+      "确认 doc/MCP-migration-cli.md 与实现保持一致。",
+      "补齐或修正 lint/typecheck/build/test 验证方式。",
+      "记录是否保留 MCP --stdio 兼容入口。"
+    ],
+    "exclude": [
+      "不发布 npm 包。",
+      "不推送远端分支。",
+      "不创建 PR。"
+    ]
+  },
+  "depends_on": [
+    "Task-2605-004",
+    "Task-2605-005"
+  ],
+  "inputs": {
+    "context_files": [
+      "package.json",
+      "README.md",
+      "doc/DEPLOYMENT.md",
+      "doc/MCP-migration-cli.md",
+      "tsconfig.json"
+    ],
+    "related_docs": [
+      "doc/planning/20260529-mcp-to-cli/20260529-mcp-to-cli.md"
+    ],
+    "notes": [
+      "package.json files 当前只包含 README、doc/ARCHITECTURE.md、doc/DEPLOYMENT.md，新增规划和需求文档是否发布需决策。",
+      "README 当前仍描述 MCP 服务启动方式，CLI 迁移完成后需要更新。"
+    ]
+  },
+  "implementation_notes": [
+    "若保留 MCP 兼容入口，文档需明确主入口 aliyunoss-cli 与兼容 --stdio 的关系。",
+    "若移除 MCP 入口，应同步清理 @modelcontextprotocol/sdk 依赖、MCP 文档和旧命令示例。",
+    "新增测试文件后确认 jest roots/testMatch 能发现测试。",
+    "最终验收前运行 lint、typecheck、build、test。"
+  ],
+  "acceptance_criteria": [
+    "package.json bin 中包含 aliyunoss-cli 主入口。",
+    "README 展示 CLI 安装、配置和核心命令示例。",
+    "部署文档不再以旧 MCP 命令作为主入口。",
+    "所有文档 Markdown 元信息已更新。",
+    "lint、typecheck、build、test 结果明确记录。"
+  ],
+  "validation": {
+    "commands": [
+      "npm run lint",
+      "npm run typecheck",
+      "npm run build",
+      "npm test",
+      "node build/cli/index.js --help"
+    ],
+    "manual_checks": [
+      "确认 README 与实际 CLI 命令一致。",
+      "确认 npm pack 文件列表包含必要文档和 build 输出。",
+      "确认旧 MCP 入口的保留或移除策略在文档中清晰说明。"
+    ]
+  },
+  "risk_level": "medium",
+  "parallelizable": false,
+  "execution_result": {
+    "target_branch": "feature/to-cli",
+    "commit": {
+      "hash": "db913f5",
+      "message": "更新 CLI 打包文档和验证体系"
+    },
+    "summary": [
+      "更新 package.json bin、main、scripts、files、lint 配置和 verify/pack:check 脚本。",
+      "更新 README、doc/DEPLOYMENT.md、doc/MCP-migration-cli.md，明确 aliyunoss-cli 主入口和 MCP stdio 兼容策略。",
+      "新增 LICENSE 和 tsconfig.eslint.json。",
+      "检查依赖状态，本轮不进行跨 major 升级。"
+    ],
+    "dependency_decision": [
+      "@modelcontextprotocol/sdk、ali-oss、dotenv、@types/ali-oss 当前无需升级。",
+      "zod、uuid、ESLint、Jest、TypeScript 等存在跨 major 升级，建议后续单独规划。"
+    ],
+    "validation": [
+      "npm run lint 通过，剩余 107 个既有 no-explicit-any warning。",
+      "npm run typecheck 通过。",
+      "npm run build 通过。",
+      "npm test 通过，8 个测试套件、42 个用例。",
+      "node build/cli/index.js --help 通过。",
+      "NPM_CONFIG_CACHE=/private/tmp/npm-cache npm run pack:check 通过。"
+    ]
+  },
+  "handoff_prompt": "执行 Task-2605-006：在命令迁移完成后更新 package.json、README、部署文档和验证体系，明确 aliyunoss-cli 是主入口，并记录 MCP 兼容入口的最终策略。"
+}

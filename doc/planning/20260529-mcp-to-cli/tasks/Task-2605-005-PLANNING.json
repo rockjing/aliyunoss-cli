@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0.0",
+  "id": "Task-2605-005",
+  "title": "迁移删除命令并加入确认保护",
+  "task_type": "修复",
+  "status": "COMPLETED",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "completed_at": "2026-05-29 20:20:32 CST",
+  "intent": "迁移 delete 和 delete-many 命令，同时修复删除无二次确认、无 dry-run 的高风险问题。",
+  "scope": {
+    "include": [
+      "实现 delete <object-key>，默认交互式二次确认。",
+      "实现 delete-many --file <list-file>，一行一个 object key。",
+      "实现 --dry-run，只展示将删除的对象，不调用删除接口。",
+      "实现 --yes，显式跳过交互确认。",
+      "展示 bucket、region、object key、数量和样例，降低误删风险。",
+      "批量删除限制单次最多 1000 个 object key。"
+    ],
+    "exclude": [
+      "不实现回收站或软删除。",
+      "不修改 OSS 生命周期规则。",
+      "不支持从远程 URL 读取删除清单。"
+    ]
+  },
+  "depends_on": [
+    "Task-2605-001",
+    "Task-2605-002",
+    "Task-2605-003"
+  ],
+  "inputs": {
+    "context_files": [
+      "src/tools/delete-file.ts",
+      "src/storage/oss-storage.ts",
+      "src/types/tools.ts"
+    ],
+    "related_docs": [
+      "doc/MCP-migration-cli.md",
+      "doc/Issue-to-fix.md"
+    ],
+    "notes": [
+      "当前 deleteObject 和 deleteMultipleObjects 工具直接执行删除，没有确认机制。",
+      "deleteMultipleObjects 当前 schema 限制 maxItems 1000，CLI 应保持一致。"
+    ]
+  },
+  "implementation_notes": [
+    "确认提示应要求输入完整 object key 或明确确认词。",
+    "非 TTY 场景未传 --yes 时应拒绝执行删除。",
+    "delete-many 读取文件后需去重、校验每个 key、展示总数和前若干样例。",
+    "用户取消删除时返回退出码 130。",
+    "dry-run 应进入与真实删除相同的校验路径，但不调用 storage.deleteFile/deleteMultipleFiles。"
+  ],
+  "acceptance_criteria": [
+    "delete 未传 --yes 时必须确认后才执行。",
+    "delete-many 未传 --yes 时必须确认后才执行。",
+    "非 TTY 未传 --yes 的删除命令不会执行。",
+    "dry-run 不调用任何删除接口。",
+    "非法 key 或超过 1000 个 key 被拒绝。",
+    "取消确认返回退出码 130。"
+  ],
+  "validation": {
+    "commands": [
+      "npm run typecheck",
+      "npm run build",
+      "npm test -- delete"
+    ],
+    "manual_checks": [
+      "aliyunoss-cli delete documents/report.pdf",
+      "aliyunoss-cli delete documents/report.pdf --yes --json",
+      "aliyunoss-cli delete-many --file ./delete-list.txt --dry-run"
+    ]
+  },
+  "risk_level": "high",
+  "parallelizable": false,
+  "execution_result": {
+    "target_branch": "feature/to-cli",
+    "commit": {
+      "hash": "4abd6bd",
+      "message": "迁移 OSS 删除 CLI 命令并增加确认保护"
+    },
+    "summary": [
+      "实现 delete 和 delete-many CLI 命令。",
+      "加入删除预览、交互确认、--yes、--dry-run、非 TTY 保护和批量 1000 key 限制。",
+      "补充删除命令和确认逻辑测试，证明 dry-run 不调用删除接口。"
+    ],
+    "validation": [
+      "npm run typecheck 通过。",
+      "npm test -- delete --watchman=false 通过。",
+      "npm run build 通过。",
+      "node build/cli/index.js --help 通过。",
+      "delete/delete-many dry-run JSON 手工验证通过。",
+      "非 TTY 未传 --yes 返回 CONFIRMATION_REQUIRED。"
+    ]
+  },
+  "handoff_prompt": "执行 Task-2605-005：迁移 delete/delete-many CLI 命令并加入二次确认、--yes、--dry-run、批量限制和非 TTY 保护。重点防止误删，必须补 mock 测试证明 dry-run 不调用删除接口。"
+}

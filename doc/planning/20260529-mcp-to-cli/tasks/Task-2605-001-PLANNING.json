@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0.0",
+  "id": "Task-2605-001",
+  "title": "建立统一 object key 安全校验",
+  "task_type": "修复",
+  "status": "COMPLETED",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "completed_at": "2026-05-29 20:20:32 CST",
+  "intent": "修复 object key 校验分散且不一致的问题，防止路径遍历和编码绕过，为 CLI 与现有 OSS 操作提供统一安全入口。",
+  "scope": {
+    "include": [
+      "新增统一 object key/prefix 校验模块。",
+      "覆盖空值、绝对路径、连续斜杠、点路径段、反斜杠、控制字符、URL 编码绕过和长度限制。",
+      "预留 OSS_KEY_PREFIX 或等价安全前缀能力。",
+      "将现有工具内分散的文件名/前缀校验迁移到统一模块。"
+    ],
+    "exclude": [
+      "不修改 OSS Bucket 权限策略。",
+      "不实现服务端回收站。",
+      "不改变 OSSStorageService 的核心 SDK 调用语义。"
+    ]
+  },
+  "depends_on": [],
+  "inputs": {
+    "context_files": [
+      "src/tools/upload-file.ts",
+      "src/tools/generate-temp-url.ts",
+      "src/tools/delete-file.ts",
+      "src/tools/list-files.ts",
+      "src/tools/copy-object.ts",
+      "src/tools/get-object-meta.ts",
+      "src/storage/oss-storage.ts"
+    ],
+    "related_docs": [
+      "doc/MCP-migration-cli.md",
+      "doc/Issue-to-fix.md"
+    ],
+    "notes": [
+      "upload-file.ts 当前校验禁止斜杠，和文档中 fileName 包含路径的描述冲突，需要统一口径。",
+      "其他工具已有相对路径段检查，但未覆盖 URL decode 后绕过。"
+    ]
+  },
+  "implementation_notes": [
+    "建议新增 src/security/object-key.ts，导出 validateObjectKey、assertObjectKey、validateObjectPrefix。",
+    "校验错误建议复用 ErrorCode.VALIDATION_ERROR 或新增更明确的错误码。",
+    "URL decode 应捕获异常，decode 后再次执行同样规则。",
+    "允许前缀配置应集中读取，避免每个命令自行拼接。"
+  ],
+  "acceptance_criteria": [
+    "所有接收 object key 的路径均调用统一校验模块。",
+    "../、..%2F、/absolute、a//b、a\\\\b、空字符串和控制字符被拒绝。",
+    "合法的 documents/report.pdf 这类分层 key 被允许。",
+    "如配置允许前缀，前缀外 key 被拒绝。",
+    "新增或更新单元测试覆盖合法、非法和编码绕过样例。"
+  ],
+  "validation": {
+    "commands": [
+      "npm run typecheck",
+      "npm test -- object-key"
+    ],
+    "manual_checks": [
+      "用 CLI 或工具调用传入 ../bad，确认返回参数错误。",
+      "用 documents/report.pdf 验证合法路径仍可通过。"
+    ]
+  },
+  "risk_level": "high",
+  "parallelizable": true,
+  "execution_result": {
+    "target_branch": "feature/to-cli",
+    "commit": {
+      "hash": "9571e77",
+      "message": "修复 OSS object key 安全校验"
+    },
+    "summary": [
+      "新增统一 object key/prefix 校验模块。",
+      "覆盖路径遍历、URL 编码绕过、绝对路径、反斜杠、连续斜杠、控制字符和长度限制。",
+      "将 OSS 工具和存储层接入统一校验。"
+    ],
+    "validation": [
+      "npm run typecheck 通过。",
+      "npm test -- object-key 通过。",
+      "最终全量 npm test 通过，8 个测试套件、42 个用例。"
+    ]
+  },
+  "handoff_prompt": "执行 Task-2605-001：基于 doc/MCP-migration-cli.md 和 doc/Issue-to-fix.md，新增统一 OSS object key 校验模块并替换现有工具内分散校验。保持业务能力不变，重点补测试覆盖路径遍历和编码绕过。"
+}

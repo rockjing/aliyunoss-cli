@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0.0",
+  "id": "Task-2605-002",
+  "title": "拆分密钥运行时配置与脱敏公开配置",
+  "task_type": "修复",
+  "status": "COMPLETED",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "completed_at": "2026-05-29 20:20:32 CST",
+  "intent": "降低 ConfigManager 明文密钥被内部代码、日志或 CLI 输出获取的风险，同时不破坏 OSS 客户端初始化。",
+  "scope": {
+    "include": [
+      "为 OSS 客户端初始化提供受控的运行时配置读取方法。",
+      "为日志、validate-config 和 CLI 输出提供脱敏配置摘要。",
+      "审查错误 details 和日志上下文，避免携带 accessKeySecret。",
+      "补充密钥脱敏测试。"
+    ],
+    "exclude": [
+      "不引入外部密钥管理系统。",
+      "不改变环境变量名称。",
+      "不加密进程内必须给 SDK 使用的运行时密钥。"
+    ]
+  },
+  "depends_on": [],
+  "inputs": {
+    "context_files": [
+      "src/config/config.ts",
+      "src/config/schema.ts",
+      "src/index.ts",
+      "src/server/mcp-server.ts",
+      "src/storage/oss-storage.ts"
+    ],
+    "related_docs": [
+      "doc/MCP-migration-cli.md",
+      "doc/Issue-to-fix.md"
+    ],
+    "notes": [
+      "ConfigManager.getConfig() 当前返回浅拷贝，包含 config.oss.accessKeyId 和 accessKeySecret。",
+      "getConfigSummary() 当前未输出密钥，但其他内部代码仍可通过 getConfig()/getOSSConfig() 直接取到完整密钥。"
+    ]
+  },
+  "implementation_notes": [
+    "建议新增 getOSSRuntimeConfig() 专供 OSSStorageService 初始化使用。",
+    "建议新增 getPublicConfig()/getSafeConfigSummary() 返回深层脱敏副本。",
+    "getConfig() 是否保留需谨慎；如保留，至少避免用于日志和 CLI 输出。",
+    "MCPError details 中包含 config 时必须脱敏 accessKeySecret。"
+  ],
+  "acceptance_criteria": [
+    "CLI validate-config 和 health 输出不包含完整 accessKeySecret。",
+    "错误日志和 JSON 错误输出不包含完整 accessKeySecret。",
+    "OSSStorageService 仍能获取完整运行时密钥并初始化。",
+    "新增测试确认脱敏格式稳定。"
+  ],
+  "validation": {
+    "commands": [
+      "npm run typecheck",
+      "npm test -- config"
+    ],
+    "manual_checks": [
+      "设置测试密钥后运行 validate-config --json，确认输出无完整密钥。",
+      "模拟配置失败，确认错误 details 不泄漏 secret。"
+    ]
+  },
+  "risk_level": "medium",
+  "parallelizable": true,
+  "execution_result": {
+    "target_branch": "feature/to-cli",
+    "commit": {
+      "hash": "423947d",
+      "message": "修复配置密钥脱敏"
+    },
+    "summary": [
+      "拆分 OSS 运行时密钥配置和公开脱敏配置。",
+      "validate-config、health、错误输出和日志上下文避免泄露完整 accessKeySecret。",
+      "补充配置脱敏和敏感字段 redaction 测试。"
+    ],
+    "validation": [
+      "npm run typecheck 通过。",
+      "npm test -- config 通过。",
+      "最终全量 npm test 通过，8 个测试套件、42 个用例。"
+    ]
+  },
+  "handoff_prompt": "执行 Task-2605-002：围绕 ConfigManager 拆分运行时 OSS 密钥配置和脱敏公开配置，确保 CLI/日志/错误输出不泄漏完整密钥，并保持 OSSStorageService 初始化正常。"
+}

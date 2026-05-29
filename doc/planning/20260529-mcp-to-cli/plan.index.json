@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0.0",
+  "plan_id": "20260529-mcp-to-cli",
+  "title": "MCP 转 aliyunoss-cli 迁移规划",
+  "summary": "基于 MCP-migration-cli 文档，已将现有阿里云 OSS MCP 服务迁移为 aliyunoss-cli 命令行工具，并完成 object key 校验、删除确认、密钥脱敏、打包文档和验证体系收尾。",
+  "status": "COMPLETED",
+  "created_by": "jingnanxin",
+  "updated_by": "jingnanxin",
+  "planning_mode": "EXISTING_CODEBASE",
+  "tech_profile": {
+    "language": "TypeScript",
+    "runtime": "Node.js >=18",
+    "module_system": "ESM",
+    "build": "tsc",
+    "package_manager": "npm",
+    "test": "jest + ts-jest",
+    "main_dependencies": [
+      "ali-oss",
+      "dotenv",
+      "zod",
+      "@modelcontextprotocol/sdk"
+    ]
+  },
+  "expert_perspectives": [
+    {
+      "name": "Node.js CLI 工程",
+      "reason": "迁移需要命令解析、bin 暴露、退出码、stdout/stderr 与 JSON 输出契约。"
+    },
+    {
+      "name": "云存储安全",
+      "reason": "OSS object key 校验、删除确认和批量删除 dry-run 是本次高风险点。"
+    },
+    {
+      "name": "配置与密钥管理",
+      "reason": "ConfigManager 当前存在明文密钥暴露风险，需要拆分运行时配置和公开配置。"
+    },
+    {
+      "name": "测试/发布工程",
+      "reason": "需要补齐 CLI 参数、安全校验、打包配置和文档验证。"
+    }
+  ],
+  "design_patterns": [
+    {
+      "name": "Command Pattern",
+      "decision": "adopt",
+      "reason": "每个 CLI 子命令独立封装，便于测试和后续扩展。"
+    },
+    {
+      "name": "Adapter/Facade",
+      "decision": "adopt",
+      "reason": "继续通过 OSSStorageService 屏蔽 ali-oss SDK 细节。"
+    },
+    {
+      "name": "Centralized Validation",
+      "decision": "adopt",
+      "reason": "object key 校验必须集中，避免各工具实现不一致。"
+    },
+    {
+      "name": "Plugin System",
+      "decision": "avoid",
+      "reason": "当前只有 7 个核心命令，引入插件系统会过度设计。"
+    }
+  ],
+  "non_goals": [
+    "不实现 Web UI 或图形化管理器。",
+    "不修改 OSS Bucket 策略或 RAM 权限。",
+    "不迁移当前未实际暴露的 ACL、分片上传等扩展命令。",
+    "不自动发布 npm 包或推送远端分支。"
+  ],
+  "stage_strategy": [
+    {
+      "stage": "安全基础",
+      "tasks": [
+        "Task-2605-001",
+        "Task-2605-002"
+      ],
+      "pause_point": "Review object key 校验规则和密钥脱敏边界。"
+    },
+    {
+      "stage": "CLI 框架",
+      "tasks": [
+        "Task-2605-003"
+      ],
+      "pause_point": "Review 命令命名、退出码和输出契约。"
+    },
+    {
+      "stage": "命令迁移",
+      "tasks": [
+        "Task-2605-004",
+        "Task-2605-005"
+      ],
+      "pause_point": "重点 Review 删除确认与 dry-run 行为。"
+    },
+    {
+      "stage": "收尾验证",
+      "tasks": [
+        "Task-2605-006"
+      ],
+      "pause_point": "Review 是否保留 MCP 兼容入口。"
+    }
+  ],
+  "completion": {
+    "completed_at": "2026-05-29 20:18:46 CST",
+    "target_branch": "feature/to-cli",
+    "pushed": false,
+    "commits": [
+      {
+        "task": "Task-2605-001",
+        "hash": "9571e77",
+        "message": "修复 OSS object key 安全校验"
+      },
+      {
+        "task": "Task-2605-002",
+        "hash": "423947d",
+        "message": "修复配置密钥脱敏"
+      },
+      {
+        "task": "Task-2605-003",
+        "hash": "8bb97a1",
+        "message": "搭建 aliyunoss CLI 命令框架"
+      },
+      {
+        "task": "Task-2605-004",
+        "hash": "ebe5196",
+        "message": "迁移非删除 OSS CLI 命令"
+      },
+      {
+        "task": "Task-2605-005",
+        "hash": "4abd6bd",
+        "message": "迁移 OSS 删除 CLI 命令并增加确认保护"
+      },
+      {
+        "task": "Task-2605-006",
+        "hash": "db913f5",
+        "message": "更新 CLI 打包文档和验证体系"
+      }
+    ],
+    "final_validation": [
+      "npm run lint 通过，剩余 107 个既有 no-explicit-any warning。",
+      "npm run typecheck 通过。",
+      "npm run build 通过。",
+      "npm test 通过，8 个测试套件、42 个用例。",
+      "node build/cli/index.js --help 通过。",
+      "NPM_CONFIG_CACHE=/private/tmp/npm-cache npm run pack:check 通过。"
+    ],
+    "compatibility_decision": "保留 aliyunoss-cli stdio、aliyunoss-cli --stdio 和 aigroup-aliyunoss-mcp --stdio 作为 MCP stdio 兼容入口，CLI 为主入口。"
+  },
+  "created_at": "2026-05-29 18:14:20 CST",
+  "updated_at": "2026-05-29 20:20:32 CST",
+  "task_count": 6,
+  "tasks": [
+    {
+      "id": "Task-2605-001",
+      "title": "建立统一 object key 安全校验",
+      "task_type": "修复",
+      "path": "tasks/Task-2605-001-PLANNING.json",
+      "status": "COMPLETED",
+      "depends_on": []
+    },
+    {
+      "id": "Task-2605-002",
+      "title": "拆分密钥运行时配置与脱敏公开配置",
+      "task_type": "修复",
+      "path": "tasks/Task-2605-002-PLANNING.json",
+      "status": "COMPLETED",
+      "depends_on": []
+    },
+    {
+      "id": "Task-2605-003",
+      "title": "搭建 aliyunoss-cli 命令框架",
+      "task_type": "新功能",
+      "path": "tasks/Task-2605-003-PLANNING.json",
+      "status": "COMPLETED",
+      "depends_on": [
+        "Task-2605-001",
+        "Task-2605-002"
+      ]
+    },
+    {
+      "id": "Task-2605-004",
+      "title": "迁移非删除类 OSS 命令",
+      "task_type": "新功能",
+      "path": "tasks/Task-2605-004-PLANNING.json",
+      "status": "COMPLETED",
+      "depends_on": [
+        "Task-2605-001",
+        "Task-2605-002",
+        "Task-2605-003"
+      ]
+    },
+    {
+      "id": "Task-2605-005",
+      "title": "迁移删除命令并加入确认保护",
+      "task_type": "修复",
+      "path": "tasks/Task-2605-005-PLANNING.json",
+      "status": "COMPLETED",
+      "depends_on": [
+        "Task-2605-001",
+        "Task-2605-002",
+        "Task-2605-003"
+      ]
+    },
+    {
+      "id": "Task-2605-006",
+      "title": "更新打包、文档和验证体系",
+      "task_type": "优化",
+      "path": "tasks/Task-2605-006-PLANNING.json",
+      "status": "COMPLETED",
+      "depends_on": [
+        "Task-2605-004",
+        "Task-2605-005"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "npm run lint",
+      "npm run typecheck",
+      "npm run build",
+      "npm test",
+      "node build/cli/index.js --help",
+      "npm run pack:check"
+    ],
+    "manual_checks": [
+      "aliyunoss-cli --help 展示 CLI 命令说明。",
+      "aliyunoss-cli validate-config --json 不输出完整密钥。",
+      "非法 object key 示例 ../、..%2F、/root、a\\\\b 均被拒绝。",
+      "delete 默认要求确认，delete --yes 可非交互执行。",
+      "delete-many --dry-run 不真实删除对象。"
+    ]
+  }
+}
