@@ -18,6 +18,7 @@ import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 
 import { ConfigManager } from '../config/index.js';
+import { redactSensitiveDetails } from '../security/redaction.js';
 import { OSSStorageService } from '../storage/index.js';
 import { allTools } from '../tools/index.js';
 import type { ToolDefinition } from '../types/index.js';
@@ -205,7 +206,7 @@ export class MCPServer extends EventEmitter {
    */
   private async initializeStorage(): Promise<void> {
     try {
-      const ossConfigSource = this.configManager.getOSSConfig();
+      const ossConfigSource = this.configManager.getOSSRuntimeConfig();
       const ossConfig: any = {
         ...ossConfigSource
       };
@@ -471,18 +472,20 @@ export class MCPServer extends EventEmitter {
       sanitized.file = `<文件内容，长度: ${sanitized.file.length}>`;
     }
 
-    return sanitized;
+    return redactSensitiveDetails(sanitized);
   }
 
   /**
    * 日志记录辅助方法
    */
   private log(level: string, message: string, data?: any): void {
+    const safeData = data ? redactSensitiveDetails(data) : undefined;
+
     if (this.logger) {
-      this.logger[level](`[MCP] ${message}`, data);
+      this.logger[level](`[MCP] ${message}`, safeData);
     } else {
       const timestamp = new Date().toISOString();
-      const logData = data ? ` ${JSON.stringify(data)}` : '';
+      const logData = safeData ? ` ${JSON.stringify(safeData)}` : '';
       console.error(`${timestamp} [${level.toUpperCase()}] [MCP] ${message}${logData}`);
     }
   }

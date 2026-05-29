@@ -12,6 +12,7 @@
 import 'dotenv/config';
 
 import { createConfigManager } from './config/index.js';
+import { redactSensitiveDetails } from './security/redaction.js';
 import { createMCPServer } from './server/index.js';
 import { MCPError, ErrorCode, LogLevel } from './types/index.js';
 
@@ -34,7 +35,8 @@ class SimpleLogger {
     if (!this.shouldLog(level)) return;
 
     const timestamp = new Date().toISOString();
-    const logData = data ? ` ${JSON.stringify(data, null, 2)}` : '';
+    const safeData = data ? redactSensitiveDetails(data) : undefined;
+    const logData = safeData ? ` ${JSON.stringify(safeData, null, 2)}` : '';
     
     // 输出到stderr避免与MCP消息混淆
     console.error(`${timestamp} [${level.toUpperCase()}] ${message}${logData}`);
@@ -195,7 +197,7 @@ class Application {
       await this.configManager.loadConfig();
       
       this.logger.info('配置加载完成', {
-        environment: this.configManager.getConfig().environment.type
+        environment: this.configManager.getPublicConfig().environment.type
       });
       
       // 创建并启动MCP服务器

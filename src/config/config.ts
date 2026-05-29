@@ -22,6 +22,7 @@ import {
 } from '../types/config.js';
 import { LogLevel } from '../types/index.js';
 import { MCPError, ErrorCode } from '../types/index.js';
+import { redactSensitiveDetails } from '../security/redaction.js';
 
 /**
  * 配置管理器
@@ -80,15 +81,16 @@ export class ConfigManager extends EventEmitter {
       this.loaded = true;
       console.log('[Config] 配置加载完成');
       
-      this.emit('config:loaded', this.config);
-      return this.config;
+      const publicConfig = this.getPublicConfig();
+      this.emit('config:loaded', publicConfig);
+      return publicConfig;
       
     } catch (error) {
       console.error('[Config] 配置加载失败:', error);
       throw new MCPError(
         ErrorCode.CONFIG_INVALID,
         `配置加载失败: ${error instanceof Error ? error.message : String(error)}`,
-        { error }
+        redactSensitiveDetails({ error })
       );
     }
   }
@@ -110,29 +112,37 @@ export class ConfigManager extends EventEmitter {
       throw new MCPError(
         ErrorCode.CONFIG_INVALID,
         `配置验证失败: ${error instanceof Error ? error.message : String(error)}`,
-        { error, config }
+        redactSensitiveDetails({ error, config })
       );
     }
   }
 
   /**
-   * 获取完整配置
+   * 获取公开配置（敏感字段已脱敏）
    */
   getConfig(): AppConfigType {
-    if (!this.loaded) {
-      throw new MCPError(
-        ErrorCode.CONFIG_MISSING,
-        '配置尚未加载，请先调用 loadConfig()'
-      );
-    }
-    return { ...this.config };
+    return this.getPublicConfig();
   }
 
   /**
-   * 获取OSS配置
+   * 获取公开配置（敏感字段已脱敏）
+   */
+  getPublicConfig(): AppConfigType {
+    return this.toPublicConfig(this.getLoadedConfig());
+  }
+
+  /**
+   * 获取OSS运行时配置（保留完整密钥，仅供初始化OSS客户端使用）
+   */
+  getOSSRuntimeConfig(): OSSConfigType {
+    return { ...this.getLoadedConfig().oss };
+  }
+
+  /**
+   * 获取OSS公开配置（敏感字段已脱敏）
    */
   getOSSConfig(): OSSConfigType {
-    return this.getConfig().oss;
+    return this.getPublicConfig().oss;
   }
 
   /**
@@ -189,7 +199,7 @@ export class ConfigManager extends EventEmitter {
    */
   updateConfig(updates: Partial<AppConfigType>): void {
     try {
-      const oldConfig = { ...this.config };
+      const oldConfig = this.toPublicConfig(this.config);
       const newConfig = this.mergeConfig(this.config, updates);
       const validatedConfig = this.validateConfig(newConfig);
       
@@ -199,7 +209,7 @@ export class ConfigManager extends EventEmitter {
         type: 'update',
         path: 'root',
         oldValue: oldConfig,
-        newValue: this.config,
+        newValue: this.toPublicConfig(this.config),
         timestamp: new Date(),
         source: 'api'
       };
@@ -212,7 +222,7 @@ export class ConfigManager extends EventEmitter {
       throw new MCPError(
         ErrorCode.CONFIG_INVALID,
         `配置更新失败: ${error instanceof Error ? error.message : String(error)}`,
-        { updates, error }
+        redactSensitiveDetails({ updates, error })
       );
     }
   }
@@ -223,7 +233,7 @@ export class ConfigManager extends EventEmitter {
   async reloadConfig(): Promise<AppConfigType> {
     try {
       console.log('[Config] 重新加载配置...');
-      const oldConfig = { ...this.config };
+      const oldConfig = this.toPublicConfig(this.config);
       
       await this.loadConfig();
       
@@ -231,7 +241,7 @@ export class ConfigManager extends EventEmitter {
         type: 'reload',
         path: 'root',
         oldValue: oldConfig,
-        newValue: this.config,
+        newValue: this.toPublicConfig(this.config),
         timestamp: new Date(),
         source: 'reload'
       };
@@ -249,7 +259,7 @@ export class ConfigManager extends EventEmitter {
    * 获取配置摘要
    */
   getConfigSummary(): Record<string, any> {
-    const config = this.getConfig();
+    const config = this.getPublicConfig();
     
     return {
       loaded: this.loaded,
@@ -478,6 +488,27 @@ export class ConfigManager extends EventEmitter {
     }
     
     return result;
+  }
+
+  /**
+   * 获取已加载的运行时配置
+   */
+  private getLoadedConfig(): AppConfigType {
+    if (!this.loaded) {
+      throw new MCPError(
+        ErrorCode.CONFIG_MISSING,
+        '配置尚未加载，请先调用 loadConfig()'
+      );
+    }
+
+    return this.config;
+  }
+
+  /**
+   * 生成公开配置快照
+   */
+  private toPublicConfig(config: AppConfigType): AppConfigType {
+    return redactSensitiveDetails(config);
   }
 
   /**

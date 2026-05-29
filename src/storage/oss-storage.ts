@@ -24,6 +24,7 @@ import {
 } from '../types/storage.js';
 import { MCPError, ErrorCode } from '../types/index.js';
 import { assertObjectKey, assertObjectPrefix } from '../security/object-key.js';
+import { redactSensitiveDetails } from '../security/redaction.js';
 
 /**
  * 阿里云OSS存储服务实现
@@ -68,7 +69,7 @@ export class OSSStorageService implements StorageService {
       throw new MCPError(
         ErrorCode.OSS_CONNECTION_ERROR,
         `OSS客户端初始化失败: ${error instanceof Error ? error.message : String(error)}`,
-        { config: { ...config, accessKeySecret: '***' }, error }
+        redactSensitiveDetails({ config, error })
       );
     }
   }
@@ -812,18 +813,20 @@ export class OSSStorageService implements StorageService {
    * 获取配置信息
    */
   getConfig(): StorageConfig {
-    return { ...this.config };
+    return redactSensitiveDetails(this.config);
   }
 
   /**
    * 日志记录辅助方法
    */
   private log(level: string, message: string, data?: any): void {
+    const safeData = data ? redactSensitiveDetails(data) : undefined;
+
     if (this.logger) {
-      this.logger[level](`[OSS] ${message}`, data);
+      this.logger[level](`[OSS] ${message}`, safeData);
     } else {
       const timestamp = new Date().toISOString();
-      const logData = data ? ` ${JSON.stringify(data)}` : '';
+      const logData = safeData ? ` ${JSON.stringify(safeData)}` : '';
       console.error(`${timestamp} [${level.toUpperCase()}] [OSS] ${message}${logData}`);
     }
   }
