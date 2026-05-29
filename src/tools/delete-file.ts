@@ -17,6 +17,7 @@ import {
   ErrorCode,
   ToolHandler
 } from '../types/index.js';
+import { validateObjectKey } from '../security/object-key.js';
 
 /**
  * 单文件删除工具处理函数
@@ -35,11 +36,12 @@ async function deleteFileHandler(
     });
 
     // 验证文件名
-    if (!isValidFileName(fileName)) {
+    const fileNameValidation = validateObjectKey(fileName);
+    if (!fileNameValidation.valid) {
       throw new MCPError(
         ErrorCode.VALIDATION_ERROR,
-        `无效的文件名: ${fileName}`,
-        { fileName, traceId }
+        `无效的文件名: ${fileName}（${fileNameValidation.reason}）`,
+        { fileName, reason: fileNameValidation.reason, traceId }
       );
     }
 
@@ -119,7 +121,7 @@ async function deleteMultipleFilesHandler(
     // 验证文件名列表
     const invalidFileNames: string[] = [];
     for (const fileName of fileNames) {
-      if (!isValidFileName(fileName)) {
+      if (!validateObjectKey(fileName).valid) {
         invalidFileNames.push(fileName);
       }
     }
@@ -260,47 +262,6 @@ async function deleteFilesOneByOne(
   }
 
   return { deleted, errors };
-}
-
-/**
- * 验证文件名是否合法
- */
-function isValidFileName(fileName: string): boolean {
-  // 检查是否为空或只包含空白字符
-  if (!fileName.trim()) {
-    return false;
-  }
-
-  // 检查长度
-  if (fileName.length > 1023) { // OSS对象名最大长度
-    return false;
-  }
-
-  // 检查是否包含非法字符（根据OSS规范）
-  const illegalChars = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
-  if (illegalChars.test(fileName)) {
-    return false;
-  }
-
-  // 检查是否以/开头（OSS不允许）
-  if (fileName.startsWith('/')) {
-    return false;
-  }
-
-  // 检查是否包含连续的斜杠
-  if (fileName.includes('//')) {
-    return false;
-  }
-
-  // 检查是否包含相对路径
-  const pathParts = fileName.split('/');
-  for (const part of pathParts) {
-    if (part === '.' || part === '..') {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 /**

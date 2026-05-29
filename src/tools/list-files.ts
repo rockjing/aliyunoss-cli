@@ -16,6 +16,7 @@ import {
   ErrorCode,
   ToolHandler
 } from '../types/index.js';
+import { validateObjectPrefix } from '../security/object-key.js';
 
 /**
  * 文件列表工具处理函数
@@ -54,11 +55,12 @@ async function listFilesHandler(
     }
 
     // 验证前缀格式
-    if (prefix && !isValidPrefix(prefix)) {
+    const prefixValidation = validateObjectPrefix(prefix);
+    if (!prefixValidation.valid) {
       throw new MCPError(
         ErrorCode.VALIDATION_ERROR,
-        `无效的前缀格式: ${prefix}`,
-        { prefix, traceId }
+        `无效的前缀格式: ${prefix}（${prefixValidation.reason}）`,
+        { prefix, reason: prefixValidation.reason, traceId }
       );
     }
 
@@ -129,37 +131,6 @@ async function listFilesHandler(
       { prefix, maxKeys, marker, delimiter, traceId, error }
     );
   }
-}
-
-/**
- * 验证前缀是否合法
- */
-function isValidPrefix(prefix: string): boolean {
-  // 检查是否包含非法字符（根据OSS规范）
-  const illegalChars = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
-  if (illegalChars.test(prefix)) {
-    return false;
-  }
-
-  // 检查是否以/开头（OSS不允许）
-  if (prefix.startsWith('/')) {
-    return false;
-  }
-
-  // 检查是否包含连续的斜杠
-  if (prefix.includes('//')) {
-    return false;
-  }
-
-  // 检查是否包含相对路径
-  const pathParts = prefix.split('/');
-  for (const part of pathParts) {
-    if (part === '.' || part === '..') {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 /**

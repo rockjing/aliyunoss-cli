@@ -1,5 +1,6 @@
 import OSS from 'ali-oss';
 import { StorageConfig, StorageService } from '../types/index.js';
+import { assertObjectKey } from './src/security/object-key.js';
 
 export class OssStorageService implements StorageService {
   private client: OSS;
@@ -31,15 +32,16 @@ export class OssStorageService implements StorageService {
 
   async uploadFile(content: Buffer, filename: string): Promise<string> {
     try {
-      console.log(`[OSS] 开始上传文件: ${filename}, 大小: ${content.length} bytes, 超时: ${this.timeout}ms`);
+      const safeFilename = assertObjectKey(filename, '文件名');
+      console.log(`[OSS] 开始上传文件: ${safeFilename}, 大小: ${content.length} bytes, 超时: ${this.timeout}ms`);
       const startTime = Date.now();
       
-      const result = await this.client.put(filename, content, {
+      const result = await this.client.put(safeFilename, content, {
         timeout: this.timeout, // 为单个操作设置超时
       });
       
       const duration = Date.now() - startTime;
-      console.log(`[OSS] 文件上传成功: ${filename}, 耗时: ${duration}ms`);
+      console.log(`[OSS] 文件上传成功: ${safeFilename}, 耗时: ${duration}ms`);
       
       return result.name;
     } catch (error) {
@@ -53,15 +55,16 @@ export class OssStorageService implements StorageService {
 
   async generateTempUrl(filename: string): Promise<string> {
     try {
-      console.log(`[OSS] 生成临时下载链接: ${filename}, 过期时间: ${this.downloadLinkExpiry}秒`);
+      const safeFilename = assertObjectKey(filename, '文件名');
+      console.log(`[OSS] 生成临时下载链接: ${safeFilename}, 过期时间: ${this.downloadLinkExpiry}秒`);
       const startTime = Date.now();
       
-      const url = await this.client.signatureUrl(filename, {
+      const url = await this.client.signatureUrl(safeFilename, {
         expires: this.downloadLinkExpiry, // signatureUrl的expires参数是秒数，不是毫秒
       });
       
       const duration = Date.now() - startTime;
-      console.log(`[OSS] 临时链接生成成功: ${filename}, 耗时: ${duration}ms`);
+      console.log(`[OSS] 临时链接生成成功: ${safeFilename}, 耗时: ${duration}ms`);
       
       return url;
     } catch (error) {
@@ -72,15 +75,16 @@ export class OssStorageService implements StorageService {
 
   async deleteFile(filename: string): Promise<void> {
     try {
-      console.log(`[OSS] 删除文件: ${filename}`);
+      const safeFilename = assertObjectKey(filename, '文件名');
+      console.log(`[OSS] 删除文件: ${safeFilename}`);
       const startTime = Date.now();
       
-      await this.client.delete(filename, {
+      await this.client.delete(safeFilename, {
         timeout: this.timeout,
       });
       
       const duration = Date.now() - startTime;
-      console.log(`[OSS] 文件删除成功: ${filename}, 耗时: ${duration}ms`);
+      console.log(`[OSS] 文件删除成功: ${safeFilename}, 耗时: ${duration}ms`);
     } catch (error) {
       console.error(`[OSS] 文件删除失败: ${filename}`, error);
       throw new Error('文件删除失败');
@@ -129,10 +133,11 @@ export class OssStorageService implements StorageService {
 
   async getFileContent(filename: string): Promise<Buffer> {
     try {
-      console.log(`[OSS] 获取文件内容: ${filename}, 超时: ${this.timeout}ms`);
+      const safeFilename = assertObjectKey(filename, '文件名');
+      console.log(`[OSS] 获取文件内容: ${safeFilename}, 超时: ${this.timeout}ms`);
       const startTime = Date.now();
       
-      const result = await this.client.get(filename, {
+      const result = await this.client.get(safeFilename, {
         timeout: this.timeout,
       });
       
@@ -141,7 +146,7 @@ export class OssStorageService implements StorageService {
       }
       
       const duration = Date.now() - startTime;
-      console.log(`[OSS] 文件内容获取成功: ${filename}, 大小: ${result.content.length} bytes, 耗时: ${duration}ms`);
+      console.log(`[OSS] 文件内容获取成功: ${safeFilename}, 大小: ${result.content.length} bytes, 耗时: ${duration}ms`);
       
       return result.content;
     } catch (error) {

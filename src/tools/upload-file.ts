@@ -8,6 +8,7 @@
 
 import { readFileSync, existsSync, statSync } from 'fs';
 import { extname } from 'path';
+import { validateObjectKey } from '../security/object-key.js';
 import {
   ToolDefinition,
   ToolContext,
@@ -131,11 +132,12 @@ async function uploadFileHandler(
     }
 
     // 验证文件名
-    if (!isValidFileName(fileName)) {
+    const fileNameValidation = validateObjectKey(fileName);
+    if (!fileNameValidation.valid) {
       throw new MCPError(
         ErrorCode.VALIDATION_ERROR,
-        `无效的文件名: ${fileName}`,
-        { fileName, traceId }
+        `无效的文件名: ${fileName}（${fileNameValidation.reason}）`,
+        { fileName, reason: fileNameValidation.reason, traceId }
       );
     }
 
@@ -237,41 +239,6 @@ function getContentTypeFromExtension(ext: string): string {
   };
 
   return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
-}
-
-/**
- * 验证文件名是否合法
- */
-function isValidFileName(fileName: string): boolean {
-  // 检查是否包含非法字符
-  const illegalChars = /[<>:"/\\|?*\x00-\x1f]/;
-  if (illegalChars.test(fileName)) {
-    return false;
-  }
-
-  // 检查是否为保留名称
-  const reservedNames = [
-    'CON', 'PRN', 'AUX', 'NUL',
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
-  ];
-  
-  const nameWithoutExt = fileName.split('.')[0]?.toUpperCase() || '';
-  if (reservedNames.includes(nameWithoutExt)) {
-    return false;
-  }
-
-  // 检查长度
-  if (fileName.length > 255) {
-    return false;
-  }
-
-  // 检查是否以点或空格结尾
-  if (fileName.endsWith('.') || fileName.endsWith(' ')) {
-    return false;
-  }
-
-  return true;
 }
 
 /**
