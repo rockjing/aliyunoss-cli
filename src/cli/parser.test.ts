@@ -28,6 +28,21 @@ describe('CLI argument parser', () => {
     expect(parsed.options.logLevel).toBe('debug');
   });
 
+  it('parses command value options for OSS commands', () => {
+    const parsed = parseCliArgs([
+      'upload',
+      './report.pdf',
+      '--key',
+      'documents/report.pdf',
+      '--content-type=application/pdf'
+    ]);
+
+    expect(parsed.command).toBe('upload');
+    expect(parsed.positionals).toEqual(['./report.pdf']);
+    expect(parsed.commandOptions['--key']).toBe('documents/report.pdf');
+    expect(parsed.commandOptions['--content-type']).toBe('application/pdf');
+  });
+
   it('throws argument errors for missing option values', () => {
     expect(() => parseCliArgs(['--config'])).toThrow(CliError);
     expect(() => parseCliArgs(['--profile='])).toThrow(CliError);

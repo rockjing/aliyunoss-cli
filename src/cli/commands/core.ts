@@ -93,6 +93,11 @@ Commands:
   version              Show version
   validate-config      Validate configuration and print a redacted summary
   health               Check configuration, OSS connectivity and process health
+  upload               Upload a local file to OSS
+  url                  Generate a temporary object URL
+  list                 List OSS objects by prefix
+  copy                 Copy an OSS object
+  meta                 Show OSS object metadata
   stdio                Start the legacy MCP stdio entry for transition
 
 Global options:
@@ -110,6 +115,9 @@ Examples:
   aliyunoss-cli --version
   aliyunoss-cli validate-config --json
   aliyunoss-cli health
+  aliyunoss-cli upload ./report.pdf --key documents/report.pdf
+  aliyunoss-cli list --prefix documents/ --max-keys 10 --json
+  aliyunoss-cli copy documents/a.pdf documents/b.pdf --no-overwrite
   aliyunoss-cli stdio`;
 }
 

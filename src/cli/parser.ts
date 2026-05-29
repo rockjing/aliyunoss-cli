@@ -9,7 +9,19 @@
 import { CliError, CliExitCode } from './errors.js';
 import type { CliOptions, ParsedCliArgs } from './types.js';
 
-const VALUE_OPTIONS = new Set(['--config', '--profile', '--log-level']);
+const VALUE_OPTIONS = new Set([
+  '--config',
+  '--profile',
+  '--log-level',
+  '--key',
+  '--expires',
+  '--prefix',
+  '--max-keys',
+  '--marker',
+  '--delimiter',
+  '--content-type',
+  '--storage-class'
+]);
 
 export function parseCliArgs(args: string[]): ParsedCliArgs {
   const options: CliOptions = {
