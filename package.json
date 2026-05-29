@@ -5,6 +5,7 @@
   "type": "module",
   "main": "build/index.js",
   "bin": {
+    "aliyunoss-cli": "build/cli/index.js",
     "aigroup-aliyunoss-mcp": "build/index.js"
   },
   "files": [
@@ -19,8 +20,9 @@
     "build:watch": "tsc --watch",
     "start": "node build/index.js",
     "dev": "tsc && node build/index.js --stdio",
-    "health": "node build/index.js --health",
-    "validate-config": "node build/index.js --validate-config",
+    "cli": "node build/cli/index.js",
+    "health": "node build/cli/index.js health",
+    "validate-config": "node build/cli/index.js validate-config",
     "clean": "rimraf build",
     "prebuild": "npm run clean",
     "prepack": "npm run build",
