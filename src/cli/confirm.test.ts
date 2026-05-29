@@ -1,4 +1,4 @@
-import { CliError, CliExitCode } from './errors.js';
+import { CliExitCode } from './errors.js';
 import { confirmDeletion, formatDeletePreview, type DeleteConfirmationIO } from './confirm.js';
 
 describe('delete confirmation', () => {

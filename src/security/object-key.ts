@@ -8,7 +8,6 @@ import { ErrorCode, MCPError } from '../types/index.js';
 
 const MAX_OBJECT_KEY_LENGTH = 1023;
 const MAX_DECODE_PASSES = 3;
-const CONTROL_CHARS = /[\x00-\x1F\x7F]/;
 
 export interface ObjectKeyValidationOptions {
   allowEmpty?: boolean;
@@ -124,7 +123,7 @@ function checkSingleValue(value: string): ObjectKeyValidationResult {
     return invalid(`长度不能超过 ${MAX_OBJECT_KEY_LENGTH} 字符`);
   }
 
-  if (CONTROL_CHARS.test(value)) {
+  if (hasControlChars(value)) {
     return invalid('不能包含控制字符');
   }
 
@@ -146,6 +145,17 @@ function checkSingleValue(value: string): ObjectKeyValidationResult {
   }
 
   return valid(value);
+}
+
+function hasControlChars(value: string): boolean {
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    if (code <= 0x1f || code === 0x7f) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function decodeOnce(value: string): ObjectKeyValidationResult {

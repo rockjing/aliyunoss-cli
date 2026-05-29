@@ -1,8 +1,8 @@
 # MCP 转 CLI 工具需求
 
-**文档版本**: 1.1.1
-**最后更新**: 2026-05-29 18:00 CST
-**变更摘要**: 将 CLI 工具正式命名为 `aliyunoss-cli`，并同步更新命令示例和迁移要求。
+**文档版本**: 1.2.1
+**最后更新**: 2026-05-29 20:15 CST
+**变更摘要**: 补充依赖检查结论，明确本轮不进行跨 major 升级。
 
 ## 需求说明
 
@@ -210,9 +210,10 @@ URL: https://...
 4. 为删除和批量删除增加确认、`--dry-run` 和 `--yes`。
 5. 调整配置读取方式，区分运行时密钥配置和脱敏公开配置。
 6. 更新 `package.json` 的 `bin`、`scripts` 和发布文件列表，将命令入口暴露为 `aliyunoss-cli`。
-7. 保留或删除 MCP 入口：
-   - 过渡期可保留 `--stdio`，方便兼容旧用法。
-   - 最终版本可移除 MCP server 入口和 `@modelcontextprotocol/sdk` 依赖。
+7. 保留 MCP stdio 兼容入口：
+   - 当前版本采用过渡兼容策略，保留 `aliyunoss-cli stdio` 与 `aliyunoss-cli --stdio`。
+   - 包内旧命令 `aigroup-aliyunoss-mcp --stdio` 继续可用，但只作为兼容入口，不再作为主入口宣传。
+   - `@modelcontextprotocol/sdk` 依赖继续保留，后续如确定彻底移除 MCP server，再单独清理依赖和旧入口。
 8. 更新 README 和部署文档中的使用方式。
 9. 补充 CLI 命令测试、参数校验测试和危险操作确认测试。
 
@@ -226,3 +227,31 @@ URL: https://...
 - CLI 支持普通文本和 `--json` 两种输出模式。
 - 配置验证和错误日志不输出完整密钥。
 - `npm run build`、类型检查和相关测试通过。
+
+### 9. 当前收尾决策
+
+本轮 CLI 迁移收尾采用以下决策：
+
+| 项目 | 决策 |
+|------|------|
+| 主命令 | `aliyunoss-cli`。 |
+| 兼容命令 | `aigroup-aliyunoss-mcp` 继续保留，但指向 CLI 入口。 |
+| MCP 入口 | 保留 `aliyunoss-cli stdio` 和 `aliyunoss-cli --stdio`。 |
+| npm `main` | 指向 `build/cli/index.js`，体现 CLI-first。 |
+| npm `files` | 发布 `build/**/*`、`README.md`、`LICENSE`、`doc/ARCHITECTURE.md`、`doc/DEPLOYMENT.md`、`doc/MCP-migration-cli.md`。 |
+| 内部文档 | `doc/planning/` 与 `doc/Issue-to-fix.md` 不进入发布文件列表。 |
+| 验证命令 | `npm run lint`、`npm run typecheck`、`npm run build`、`npm test`、`node build/cli/index.js --help`、`npm run pack:check`。 |
+
+### 10. 依赖检查结论
+
+Task-2605-006 收尾时已通过 npm registry 检查依赖状态。
+
+本轮不进行跨 major 升级，理由如下：
+
+| 依赖类型 | 结论 |
+|----------|------|
+| OSS/MCP 运行时 | `@modelcontextprotocol/sdk`、`ali-oss`、`dotenv`、`@types/ali-oss` 当前安装版本已是 registry 可用的兼容版本，不需要调整。 |
+| 配置和工具库 | `zod` 有 v4 major，`uuid` 有更高 major；涉及 API 与类型变化，本轮保持当前 major。 |
+| 构建和测试工具 | ESLint、`@typescript-eslint/*`、Jest、TypeScript、Rimraf、Node 类型均存在 major 升级；这类升级需要单独迁移 ESLint/Jest/TS 配置，本轮不混入 CLI 收尾任务。 |
+
+后续如要升级依赖，建议单独建立依赖升级任务，先升级 dev toolchain，再升级运行时库，并分别跑 `lint`、`typecheck`、`build`、`test` 和 CLI 手工验证。
