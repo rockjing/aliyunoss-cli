@@ -17,6 +17,8 @@ export type CliStorageFactory = (config: StorageConfig) => StorageService;
 
 export interface CliStorageRuntime {
   storage: StorageService;
+  bucket: string;
+  region: string;
 }
 
 export async function createCliStorageRuntime(
@@ -25,9 +27,12 @@ export async function createCliStorageRuntime(
 ): Promise<CliStorageRuntime> {
   const configManager = createConfigManager({ configFile: parsed.options.configFile });
   await withConsoleLogsOnStderr(() => configManager.loadConfig());
+  const ossConfig = configManager.getOSSRuntimeConfig();
 
   return {
-    storage: createStorage(toStorageConfig(configManager.getOSSRuntimeConfig()))
+    storage: createStorage(toStorageConfig(ossConfig)),
+    bucket: ossConfig.bucket,
+    region: ossConfig.region
   };
 }
 

@@ -20,7 +20,8 @@ const VALUE_OPTIONS = new Set([
   '--marker',
   '--delimiter',
   '--content-type',
-  '--storage-class'
+  '--storage-class',
+  '--file'
 ]);
 
 export function parseCliArgs(args: string[]): ParsedCliArgs {

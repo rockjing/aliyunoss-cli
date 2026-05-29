@@ -17,9 +17,14 @@ import { writeError, writeSuccess } from './output.js';
 import { parseCliArgs } from './parser.js';
 import { createCoreCommands, getHelpText } from './commands/core.js';
 import { createOssCommands } from './commands/oss.js';
+import { createDeleteCommands } from './commands/delete.js';
 import type { CliCommand, ParsedCliArgs } from './types.js';
 
-const commands = createCommandRegistry([...createCoreCommands(), ...createOssCommands()]);
+const commands = createCommandRegistry([
+  ...createCoreCommands(),
+  ...createOssCommands(),
+  ...createDeleteCommands()
+]);
 
 export async function main(rawArgs = process.argv.slice(2)): Promise<void> {
   let parsed: ParsedCliArgs | null = null;

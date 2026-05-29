@@ -43,6 +43,15 @@ describe('CLI argument parser', () => {
     expect(parsed.commandOptions['--content-type']).toBe('application/pdf');
   });
 
+  it('parses delete list file option and global delete guards', () => {
+    const parsed = parseCliArgs(['delete-many', '--file', './delete-list.txt', '--dry-run', '--yes']);
+
+    expect(parsed.command).toBe('delete-many');
+    expect(parsed.commandOptions['--file']).toBe('./delete-list.txt');
+    expect(parsed.options.dryRun).toBe(true);
+    expect(parsed.options.yes).toBe(true);
+  });
+
   it('throws argument errors for missing option values', () => {
     expect(() => parseCliArgs(['--config'])).toThrow(CliError);
     expect(() => parseCliArgs(['--profile='])).toThrow(CliError);

@@ -98,6 +98,8 @@ Commands:
   list                 List OSS objects by prefix
   copy                 Copy an OSS object
   meta                 Show OSS object metadata
+  delete               Delete one OSS object with confirmation
+  delete-many          Delete OSS objects from a local list file
   stdio                Start the legacy MCP stdio entry for transition
 
 Global options:
@@ -118,6 +120,8 @@ Examples:
   aliyunoss-cli upload ./report.pdf --key documents/report.pdf
   aliyunoss-cli list --prefix documents/ --max-keys 10 --json
   aliyunoss-cli copy documents/a.pdf documents/b.pdf --no-overwrite
+  aliyunoss-cli delete documents/report.pdf
+  aliyunoss-cli delete-many --file ./delete-list.txt --dry-run
   aliyunoss-cli stdio`;
 }
 
