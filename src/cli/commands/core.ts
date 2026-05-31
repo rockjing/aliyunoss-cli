@@ -97,6 +97,7 @@ Commands:
   url                  Generate a temporary object URL
   list                 List OSS objects by prefix
   copy                 Copy an OSS object
+  symlink              Create an OSS symlink object
   meta                 Show OSS object metadata
   delete               Delete one OSS object with confirmation
   delete-many          Delete OSS objects from a local list file
@@ -121,6 +122,7 @@ Examples:
   aliyunoss-cli upload ./report.pdf --key documents/report.pdf
   aliyunoss-cli list --prefix documents/ --max-keys 10 --json
   aliyunoss-cli copy documents/a.pdf documents/b.pdf --no-overwrite
+  aliyunoss-cli symlink documents/report.pdf /latest/report.pdf --no-overwrite
   aliyunoss-cli delete documents/report.pdf
   aliyunoss-cli delete-many --file ./delete-list.txt --dry-run
   aliyunoss-cli stdio`;

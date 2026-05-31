@@ -15,6 +15,8 @@ export type {
   StorageConfig,
   StorageBackend,
   UploadOptions,
+  CreateSymlinkOptions,
+  SymlinkResult,
   FileListResult,
   FileMetadata,
   ACLResult,

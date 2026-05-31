@@ -12,6 +12,7 @@ const MAX_DECODE_PASSES = 3;
 export interface ObjectKeyValidationOptions {
   allowEmpty?: boolean;
   allowedPrefix?: string;
+  allowAbsolute?: boolean;
 }
 
 export interface ObjectKeyValidationResult {
@@ -71,13 +72,23 @@ function validatePathValue(
   options: ObjectKeyValidationOptions
 ): ObjectKeyValidationResult {
   const allowEmpty = options.allowEmpty ?? false;
-  const key = value.trim();
+  let key = value.trim();
   const configuredAllowedPrefix = options.allowedPrefix ?? process.env.OSS_KEY_PREFIX;
   const allowedPrefix = configuredAllowedPrefix?.trim();
 
   if (!key) {
     return allowEmpty ? valid(allowedPrefix || key) : invalid('不能为空');
   }
+
+  const normalizedAbsolutePath = normalizeAbsolutePath(
+    key,
+    options.allowAbsolute ?? false,
+    allowEmpty
+  );
+  if (!normalizedAbsolutePath.valid) {
+    return normalizedAbsolutePath;
+  }
+  key = normalizedAbsolutePath.normalizedKey ?? key;
 
   const rawCheck = checkSingleValue(key);
   if (!rawCheck.valid) {
@@ -118,6 +129,27 @@ function validatePathValue(
   return valid(key);
 }
 
+function normalizeAbsolutePath(
+  value: string,
+  allowAbsolute: boolean,
+  allowEmpty: boolean
+): ObjectKeyValidationResult {
+  if (!allowAbsolute || !value.startsWith('/')) {
+    return valid(value);
+  }
+
+  if (value.startsWith('//')) {
+    return invalid('绝对路径只能包含一个前导 /');
+  }
+
+  const normalized = value.slice(1);
+  if (!normalized && !allowEmpty) {
+    return invalid('不能为空');
+  }
+
+  return valid(normalized);
+}
+
 function checkSingleValue(value: string): ObjectKeyValidationResult {
   if (value.length > MAX_OBJECT_KEY_LENGTH) {
     return invalid(`长度不能超过 ${MAX_OBJECT_KEY_LENGTH} 字符`);
@@ -140,7 +172,7 @@ function checkSingleValue(value: string): ObjectKeyValidationResult {
   }
 
   const parts = value.split('/');
-  if (parts.some(part => part === '.' || part === '..')) {
+  if (parts.some((part) => part === '.' || part === '..')) {
     return invalid('不能包含 . 或 .. 路径段');
   }
 

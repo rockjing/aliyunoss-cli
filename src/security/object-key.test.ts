@@ -1,4 +1,4 @@
-import { validateObjectKey, validateObjectPrefix } from './object-key';
+import { assertObjectKey, validateObjectKey, validateObjectPrefix } from './object-key';
 
 describe('object key validation', () => {
   it('allows hierarchical object keys', () => {
@@ -15,7 +15,7 @@ describe('object key validation', () => {
     'a//b.txt',
     'a\\b.txt',
     'bad\u0001key.txt',
-  ])('rejects unsafe object key %s', key => {
+  ])('rejects unsafe object key %s', (key) => {
     expect(validateObjectKey(key).valid).toBe(false);
   });
 
@@ -27,5 +27,16 @@ describe('object key validation', () => {
     expect(validateObjectKey('uploads/report.pdf', { allowedPrefix: 'uploads/' }).valid).toBe(true);
     expect(validateObjectKey('other/report.pdf', { allowedPrefix: 'uploads/' }).valid).toBe(false);
     expect(validateObjectPrefix('', { allowedPrefix: 'uploads/' }).normalizedKey).toBe('uploads/');
+  });
+
+  it('normalizes an allowed absolute object path', () => {
+    expect(assertObjectKey('/documents/report.pdf', 'object key', { allowAbsolute: true })).toBe(
+      'documents/report.pdf'
+    );
+  });
+
+  it('rejects malformed absolute object paths', () => {
+    expect(validateObjectKey('//documents/report.pdf', { allowAbsolute: true }).valid).toBe(false);
+    expect(validateObjectKey('/', { allowAbsolute: true }).valid).toBe(false);
   });
 });
