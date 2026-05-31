@@ -55,13 +55,13 @@
   "publishConfig": {
     "access": "public"
   },
-  "homepage": "https://github.com/jackdark425/aigroup-aliyunoss-mcp#readme",
+  "homepage": "https://github.com/rockjing/aliyunoss-cli#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jackdark425/aigroup-aliyunoss-mcp.git"
+    "url": "git+https://github.com/rockjing/aliyunoss-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/jackdark425/aigroup-aliyunoss-mcp/issues"
+    "url": "https://github.com/rockjing/aliyunoss-cli/issues"
   },
   "engines": {
     "node": ">=18.0.0"
