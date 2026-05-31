@@ -1,7 +1,7 @@
 /**
  * aliyunoss-cli - 非删除类 OSS 命令
  *
- * @fileoverview 实现 upload、url、list、copy、meta 子命令
+ * @fileoverview 实现 upload、url、list、copy、symlink、meta 子命令
  * @author aigroup-aliyunoss-mcp team
  * @version 1.0.0
  */
@@ -16,7 +16,7 @@ import type {
   ListFilesOptions,
   StorageClass,
   StorageService,
-  UploadOptions
+  UploadOptions,
 } from '../../storage/index.js';
 import { ErrorCode, MCPError } from '../../types/index.js';
 import { CliError, CliExitCode } from '../errors.js';
@@ -42,7 +42,7 @@ interface ResolvedOssCommandDependencies {
 export function createOssCommands(dependencies: OssCommandDependencies = {}): CliCommand[] {
   const deps: ResolvedOssCommandDependencies = {
     now: dependencies.now ?? (() => new Date()),
-    createStorage: dependencies.createStorage
+    createStorage: dependencies.createStorage,
   };
 
   return [
@@ -50,32 +50,39 @@ export function createOssCommands(dependencies: OssCommandDependencies = {}): Cl
       name: 'upload',
       summary: '上传本地文件到 OSS',
       usage: 'aliyunoss-cli upload <local-file> --key <object-key> [--content-type <type>]',
-      run: (context) => runUpload(context, deps)
+      run: (context) => runUpload(context, deps),
     },
     {
       name: 'url',
       summary: '生成对象临时访问 URL',
       usage: 'aliyunoss-cli url <object-key> [--expires <seconds>]',
-      run: (context) => runUrl(context, deps)
+      run: (context) => runUrl(context, deps),
     },
     {
       name: 'list',
       summary: '按前缀列出 OSS 对象',
       usage: 'aliyunoss-cli list [--prefix <prefix>] [--max-keys <n>]',
-      run: (context) => runList(context, deps)
+      run: (context) => runList(context, deps),
     },
     {
       name: 'copy',
       summary: '复制 OSS 对象',
       usage: 'aliyunoss-cli copy <source-key> <target-key> [--no-overwrite]',
-      run: (context) => runCopy(context, deps)
+      run: (context) => runCopy(context, deps),
+    },
+    {
+      name: 'symlink',
+      aliases: ['put-symlink'],
+      summary: '创建 OSS 软链接',
+      usage: 'aliyunoss-cli symlink <target-key> <symlink-key> [--no-overwrite]',
+      run: (context) => runSymlink(context, deps),
     },
     {
       name: 'meta',
       summary: '查询 OSS 对象元数据',
       usage: 'aliyunoss-cli meta <object-key>',
-      run: (context) => runMeta(context, deps)
-    }
+      run: (context) => runMeta(context, deps),
+    },
   ];
 }
 
@@ -86,9 +93,13 @@ async function runUpload(
   ensureOnlyOptions(parsed, 'upload', ['--key', '--content-type', '--storage-class']);
   const uploadArgs = requirePositionals(parsed, 'upload', 1);
   const localFile = uploadArgs[0] as string;
-  const key = assertObjectKey(requireStringOption(parsed, '--key', 'upload 需要 --key <object-key>'), 'object key');
+  const key = assertObjectKey(
+    requireStringOption(parsed, '--key', 'upload 需要 --key <object-key>'),
+    'object key'
+  );
   const file = readLocalFile(localFile);
-  const contentType = getStringOption(parsed, '--content-type') ?? getContentTypeFromExtension(extname(localFile));
+  const contentType =
+    getStringOption(parsed, '--content-type') ?? getContentTypeFromExtension(extname(localFile));
   const storageClass = getStringOption(parsed, '--storage-class');
   const runtime = await createCliStorageRuntime(parsed, deps.createStorage);
   const uploadOptions: UploadOptions = { contentType };
@@ -106,7 +117,7 @@ async function runUpload(
     size: file.size,
     contentType,
     storageClass: storageClass ?? 'Standard',
-    uploadTime: deps.now().toISOString()
+    uploadTime: deps.now().toISOString(),
   };
 
   return {
@@ -116,7 +127,7 @@ async function runUpload(
 Key: ${uploadedKey}
 Size: ${file.size}
 Content-Type: ${contentType}
-URL: ${url}`
+URL: ${url}`,
   };
 }
 
@@ -154,7 +165,7 @@ async function runUrl(
 Key: ${key}
 Expires: ${expires}
 Expires At: ${expiresAt}
-URL: ${url}`
+URL: ${url}`,
   };
 }
 
@@ -195,7 +206,7 @@ async function runList(
   return {
     command: 'list',
     data,
-    text: formatListText(data)
+    text: formatListText(data),
   };
 }
 
@@ -244,7 +255,7 @@ async function runCopy(
     overwrite,
     sourceSize: sourceMetadata.size,
     etag: targetMetadata?.etag ?? '',
-    copyTime: deps.now().toISOString()
+    copyTime: deps.now().toISOString(),
   };
 
   return {
@@ -253,7 +264,56 @@ async function runCopy(
     text: `Copy success
 Source: ${source}
 Target: ${target}
-Overwrite: ${overwrite ? 'yes' : 'no'}`
+Overwrite: ${overwrite ? 'yes' : 'no'}`,
+  };
+}
+
+async function runSymlink(
+  { parsed }: CliCommandContext,
+  deps: ResolvedOssCommandDependencies
+): Promise<CliCommandResult> {
+  ensureOnlyOptions(parsed, 'symlink', ['--no-overwrite', '--storage-class']);
+  const symlinkArgs = requirePositionals(parsed, 'symlink', 2);
+  const rawTarget = symlinkArgs[0] as string;
+  const rawSymlink = symlinkArgs[1] as string;
+  const target = assertObjectKey(rawTarget, 'target object key', { allowAbsolute: true });
+  const symlink = assertObjectKey(rawSymlink, 'symlink object key', { allowAbsolute: true });
+
+  if (target === symlink) {
+    throw new CliError(
+      'SAME_TARGET_SYMLINK',
+      '软链接路径不能与目标对象相同',
+      CliExitCode.ARGUMENT_ERROR
+    );
+  }
+
+  const runtime = await createCliStorageRuntime(parsed, deps.createStorage);
+  const createSymlink = requireStorageMethod(runtime.storage, 'createSymlink');
+  const overwrite = !getBooleanOption(parsed, '--no-overwrite');
+  const storageClass = getStringOption(parsed, '--storage-class');
+  const result = await createSymlink.call(runtime.storage, target, symlink, {
+    forbidOverwrite: !overwrite,
+    ...(storageClass ? { storageClass: storageClass as StorageClass } : {}),
+  });
+  const data = {
+    target: result.target,
+    symlink: result.symlink,
+    symlinkPath: `/${result.symlink}`,
+    success: true,
+    overwrite,
+    storageClass: storageClass ?? 'Standard',
+    ...(result.requestId ? { requestId: result.requestId } : {}),
+    ...(result.versionId ? { versionId: result.versionId } : {}),
+    createTime: deps.now().toISOString(),
+  };
+
+  return {
+    command: 'symlink',
+    data,
+    text: `Symlink created
+Target: ${result.target}
+Symlink: /${result.symlink}
+Overwrite: ${overwrite ? 'yes' : 'no'}`,
   };
 }
 
@@ -277,7 +337,7 @@ async function runMeta(
     etag: metadata.etag,
     storageClass: metadata.storageClass ?? 'Standard',
     metadata: metadata.metadata ?? {},
-    ...(metadata.versionId ? { versionId: metadata.versionId } : {})
+    ...(metadata.versionId ? { versionId: metadata.versionId } : {}),
   };
 
   return {
@@ -288,7 +348,7 @@ Key: ${metadata.name}
 Size: ${metadata.size}
 Content-Type: ${metadata.contentType}
 ETag: ${metadata.etag}
-Last Modified: ${metadata.lastModified.toISOString()}`
+Last Modified: ${metadata.lastModified.toISOString()}`,
   };
 }
 
@@ -312,7 +372,7 @@ function readLocalFile(filePath: string): { content: Buffer; size: number } {
 
   return {
     content: readFileSync(filePath),
-    size: stats.size
+    size: stats.size,
   };
 }
 
@@ -342,7 +402,7 @@ function normalizeListResult(result: FileListResult) {
     lastModified: object.lastModified.toISOString(),
     etag: object.etag,
     storageClass: object.storageClass ?? 'Standard',
-    contentType: getContentTypeFromExtension(extname(object.name))
+    contentType: getContentTypeFromExtension(extname(object.name)),
   }));
 
   return {
@@ -350,15 +410,12 @@ function normalizeListResult(result: FileListResult) {
     prefixes: result.prefixes ?? [],
     nextMarker: result.nextMarker,
     isTruncated: result.isTruncated,
-    count: objects.length
+    count: objects.length,
   };
 }
 
 function formatListText(data: ReturnType<typeof normalizeListResult>): string {
-  const lines = [
-    `Objects: ${data.count}`,
-    `Truncated: ${data.isTruncated ? 'yes' : 'no'}`
-  ];
+  const lines = [`Objects: ${data.count}`, `Truncated: ${data.isTruncated ? 'yes' : 'no'}`];
 
   if (data.nextMarker) {
     lines.push(`Next Marker: ${data.nextMarker}`);
@@ -375,7 +432,11 @@ function formatListText(data: ReturnType<typeof normalizeListResult>): string {
   return lines.join('\n');
 }
 
-function requirePositionals(parsed: ParsedCliArgs, commandName: string, expected: number): string[] {
+function requirePositionals(
+  parsed: ParsedCliArgs,
+  commandName: string,
+  expected: number
+): string[] {
   if (parsed.positionals.length !== expected) {
     throw new CliError(
       'INVALID_ARGUMENT_COUNT',
@@ -388,7 +449,9 @@ function requirePositionals(parsed: ParsedCliArgs, commandName: string, expected
 }
 
 function ensureOnlyOptions(parsed: ParsedCliArgs, commandName: string, allowed: string[]): void {
-  const unexpected = Object.keys(parsed.commandOptions).filter((option) => !allowed.includes(option));
+  const unexpected = Object.keys(parsed.commandOptions).filter(
+    (option) => !allowed.includes(option)
+  );
   if (unexpected.length > 0) {
     throw new CliError(
       'UNKNOWN_OPTION',
@@ -423,12 +486,10 @@ function getIntegerOption(parsed: ParsedCliArgs, optionName: string, defaultValu
 
   const value = Number.parseInt(rawValue, 10);
   if (!Number.isInteger(value) || String(value) !== rawValue) {
-    throw new CliError(
-      'INVALID_NUMBER',
-      `${optionName} 需要整数值`,
-      CliExitCode.ARGUMENT_ERROR,
-      { optionName, value: rawValue }
-    );
+    throw new CliError('INVALID_NUMBER', `${optionName} 需要整数值`, CliExitCode.ARGUMENT_ERROR, {
+      optionName,
+      value: rawValue,
+    });
   }
 
   return value;
@@ -462,7 +523,7 @@ function getContentTypeFromExtension(ext: string): string {
     '.html': 'text/html',
     '.json': 'application/json',
     '.csv': 'text/csv',
-    '.zip': 'application/zip'
+    '.zip': 'application/zip',
   };
 
   return contentTypes[ext.toLowerCase()] ?? 'application/octet-stream';

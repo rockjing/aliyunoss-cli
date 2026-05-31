@@ -1,8 +1,8 @@
 # aliyunoss-cli
 
-**文档版本**: 1.2.0
-**最后更新**: 2026-05-31 15:00 CST
-**变更摘要**: 补充 CLI 通过凭据 JSON 文件加载 OSS 配置的用法和示例。
+**文档版本**: 1.3.0
+**最后更新**: 2026-05-31 16:08 CST
+**变更摘要**: 补充 CLI 创建 OSS 软链接和绝对路径写法的用法示例。
 
 ## 应用说明
 
@@ -13,7 +13,7 @@
 - **入口**: `src/cli/index.ts`
 - **包命令**: `aliyunoss-cli`
 - **作用**: 通过命令行直接执行 OSS 文件管理操作，适合人工运维、脚本和 CI 任务。
-- **主要能力**: 上传文件、生成临时访问链接、列出文件、复制文件、查询元数据、单文件删除、批量删除、配置校验和健康检查。
+- **主要能力**: 上传文件、生成临时访问链接、列出文件、复制文件、创建软链接、查询元数据、单文件删除、批量删除、配置校验和健康检查。
 
 ### 2. MCP stdio 兼容入口
 
@@ -88,9 +88,12 @@ aliyunoss-cli upload ./report.pdf --key documents/report.pdf
 aliyunoss-cli url documents/report.pdf --expires 3600
 aliyunoss-cli list --prefix documents/ --max-keys 100 --json
 aliyunoss-cli copy documents/a.pdf documents/b.pdf --no-overwrite
+aliyunoss-cli symlink documents/report.pdf /latest/report.pdf --no-overwrite
 aliyunoss-cli meta documents/report.pdf
 aliyunoss-cli list --credentials ./credentials.json --prefix documents/ --json
 ```
+
+`symlink` 命令用于创建 OSS 软链接对象，参数顺序为 `<target-key> <symlink-key>`。软链接路径和目标路径支持以单个 `/` 开头的 Bucket 根路径写法，例如 `/latest/report.pdf` 会按 `latest/report.pdf` 写入 OSS；`//latest/report.pdf`、`/`、包含 `..` 的路径仍会被拒绝。
 
 删除命令默认有二次确认保护：
 

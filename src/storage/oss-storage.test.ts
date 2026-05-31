@@ -1,7 +1,7 @@
 import OSS from 'ali-oss';
 
 import { OSSStorageService } from './oss-storage.js';
-import type { StorageConfig } from '../types/storage.js';
+import { StorageClass, type StorageConfig } from '../types/storage.js';
 
 jest.mock('ali-oss', () => jest.fn());
 
@@ -13,7 +13,7 @@ describe('OSSStorageService metadata', () => {
     accessKeySecret: 'super-secret-value',
     bucket: 'example-bucket',
     region: 'oss-cn-hangzhou',
-    timeout: 5
+    timeout: 5,
   };
 
   beforeEach(() => {
@@ -31,10 +31,10 @@ describe('OSSStorageService metadata', () => {
           'x-oss-storage-class': 'IA',
           'x-oss-meta-owner': 'cli-test',
           'cache-control': 'max-age=60',
-          expires: 'Fri, 29 May 2026 07:05:02 GMT'
-        }
+          expires: 'Fri, 29 May 2026 07:05:02 GMT',
+        },
       },
-      versionId: 'version-1'
+      versionId: 'version-1',
     }));
     MockedOSS.mockImplementation(() => ({ head }));
 
@@ -42,7 +42,7 @@ describe('OSSStorageService metadata', () => {
       info: jest.fn(),
       error: jest.fn(),
       warn: jest.fn(),
-      debug: jest.fn()
+      debug: jest.fn(),
     };
     const storage = new OSSStorageService(config, logger);
     const metadata = await storage.getFileMetadata('documents/package.json');
@@ -56,11 +56,55 @@ describe('OSSStorageService metadata', () => {
       storageClass: 'IA',
       cacheControl: 'max-age=60',
       metadata: {
-        owner: 'cli-test'
+        owner: 'cli-test',
       },
-      versionId: 'version-1'
+      versionId: 'version-1',
     });
     expect(metadata.lastModified.toISOString()).toBe('2026-05-29T06:05:02.000Z');
     expect(metadata.expires?.toISOString()).toBe('2026-05-29T07:05:02.000Z');
+  });
+
+  it('creates symlink with normalized absolute paths', async () => {
+    const putSymlink = jest.fn(async () => ({
+      res: {
+        headers: {
+          'x-oss-request-id': 'request-1',
+          'x-oss-version-id': 'version-link',
+        },
+      },
+    }));
+    MockedOSS.mockImplementation(() => ({ putSymlink }));
+
+    const logger = {
+      info: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
+    const storage = new OSSStorageService(config, logger);
+    const result = await storage.createSymlink('/documents/source.txt', '/shortcuts/latest.txt', {
+      forbidOverwrite: true,
+      storageClass: StorageClass.STANDARD,
+      metadata: {
+        owner: 'cli-test',
+      },
+    });
+
+    expect(putSymlink).toHaveBeenCalledWith('shortcuts/latest.txt', 'documents/source.txt', {
+      timeout: 5000,
+      headers: {
+        'x-oss-forbid-overwrite': 'true',
+      },
+      storageClass: 'Standard',
+      meta: {
+        owner: 'cli-test',
+      },
+    });
+    expect(result).toEqual({
+      symlink: 'shortcuts/latest.txt',
+      target: 'documents/source.txt',
+      requestId: 'request-1',
+      versionId: 'version-link',
+    });
   });
 });

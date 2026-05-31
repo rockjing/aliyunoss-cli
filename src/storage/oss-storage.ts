@@ -11,6 +11,8 @@ import {
   StorageService,
   StorageConfig,
   UploadOptions,
+  CreateSymlinkOptions,
+  SymlinkResult,
   FileListResult,
   FileMetadata,
   ACLResult,
@@ -20,7 +22,7 @@ import {
   CompleteMultipartResult,
   MultipartListResult,
   ListFilesOptions,
-  StorageClass
+  StorageClass,
 } from '../types/storage.js';
 import { MCPError, ErrorCode } from '../types/index.js';
 import { assertObjectKey, assertObjectPrefix } from '../security/object-key.js';
@@ -49,7 +51,7 @@ export class OSSStorageService implements StorageService {
         secure: config.secure ?? true,
         timeout: (config.timeout ?? 300) * 1000,
         internal: config.internal ?? false,
-        stsToken: config.stsToken
+        stsToken: config.stsToken,
       };
 
       if (config.cname) {
@@ -62,7 +64,7 @@ export class OSSStorageService implements StorageService {
         region: config.region,
         bucket: config.bucket,
         secure: config.secure,
-        timeout: config.timeout
+        timeout: config.timeout,
       });
     } catch (error) {
       this.log('error', 'OSS客户端初始化失败', { error });
@@ -83,14 +85,14 @@ export class OSSStorageService implements StorageService {
       this.log('info', '开始上传文件', {
         filename: safeFilename,
         size: content.length,
-        contentType: options?.contentType
+        contentType: options?.contentType,
       });
 
       const startTime = Date.now();
 
       const uploadOptions: any = {
         timeout: this.config.timeout ? this.config.timeout * 1000 : 300000,
-        headers: {}
+        headers: {},
       };
 
       // 设置上传选项
@@ -134,7 +136,7 @@ export class OSSStorageService implements StorageService {
       this.log('info', '文件上传成功', {
         filename: safeFilename,
         etag: (result as any).etag || '',
-        duration
+        duration,
       });
 
       return result.name;
@@ -142,26 +144,24 @@ export class OSSStorageService implements StorageService {
       this.log('error', '文件上传失败', { filename: safeFilename, error });
 
       if (this.isTimeoutError(error)) {
-        throw new MCPError(
-          ErrorCode.OSS_TIMEOUT_ERROR,
-          `文件上传超时: ${safeFilename}`,
-          { filename: safeFilename, timeout: this.config.timeout, error }
-        );
+        throw new MCPError(ErrorCode.OSS_TIMEOUT_ERROR, `文件上传超时: ${safeFilename}`, {
+          filename: safeFilename,
+          timeout: this.config.timeout,
+          error,
+        });
       }
 
       if (this.isAuthError(error)) {
-        throw new MCPError(
-          ErrorCode.OSS_AUTHENTICATION_ERROR,
-          `OSS认证失败: ${safeFilename}`,
-          { filename: safeFilename, error }
-        );
+        throw new MCPError(ErrorCode.OSS_AUTHENTICATION_ERROR, `OSS认证失败: ${safeFilename}`, {
+          filename: safeFilename,
+          error,
+        });
       }
 
-      throw new MCPError(
-        ErrorCode.FILE_UPLOAD_FAILED,
-        `文件上传失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.FILE_UPLOAD_FAILED, `文件上传失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
@@ -178,7 +178,7 @@ export class OSSStorageService implements StorageService {
 
       const url = await this.client.signatureUrl(safeFilename, {
         expires: expiresIn,
-        method: 'GET'
+        method: 'GET',
       });
 
       const duration = Date.now() - startTime;
@@ -187,11 +187,10 @@ export class OSSStorageService implements StorageService {
       return url;
     } catch (error) {
       this.log('error', '生成临时下载链接失败', { filename: safeFilename, error });
-      throw new MCPError(
-        ErrorCode.OSS_CONNECTION_ERROR,
-        `生成临时下载链接失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.OSS_CONNECTION_ERROR, `生成临时下载链接失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
@@ -206,7 +205,7 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       await this.client.delete(safeFilename, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const duration = Date.now() - startTime;
@@ -220,11 +219,10 @@ export class OSSStorageService implements StorageService {
         return;
       }
 
-      throw new MCPError(
-        ErrorCode.FILE_DELETE_FAILED,
-        `文件删除失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.FILE_DELETE_FAILED, `文件删除失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
@@ -244,13 +242,16 @@ export class OSSStorageService implements StorageService {
       let marker: string | undefined;
 
       do {
-        const result = await this.client.list({
-          'max-keys': maxKeys,
-          marker,
-          prefix: ''
-        }, {
-          timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
-        });
+        const result = await this.client.list(
+          {
+            'max-keys': maxKeys,
+            marker,
+            prefix: '',
+          },
+          {
+            timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
+          }
+        );
 
         for (const object of result.objects || []) {
           const fileAge = now - new Date(object.lastModified).getTime();
@@ -265,7 +266,7 @@ export class OSSStorageService implements StorageService {
       const duration = Date.now() - startTime;
       this.log('info', '列出过期文件完成', {
         count: expiredFiles.length,
-        duration
+        duration,
       });
 
       return expiredFiles;
@@ -286,22 +287,20 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       const result = await this.client.get(safeFilename, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 300000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 300000,
       });
 
       if (!result.content) {
-        throw new MCPError(
-          ErrorCode.FILE_NOT_FOUND,
-          `文件内容为空: ${safeFilename}`,
-          { filename: safeFilename }
-        );
+        throw new MCPError(ErrorCode.FILE_NOT_FOUND, `文件内容为空: ${safeFilename}`, {
+          filename: safeFilename,
+        });
       }
 
       const duration = Date.now() - startTime;
       this.log('info', '文件内容获取成功', {
         filename: safeFilename,
         size: result.content.length,
-        duration
+        duration,
       });
 
       return result.content;
@@ -309,26 +308,24 @@ export class OSSStorageService implements StorageService {
       this.log('error', '获取文件内容失败', { filename: safeFilename, error });
 
       if (this.isTimeoutError(error)) {
-        throw new MCPError(
-          ErrorCode.OSS_TIMEOUT_ERROR,
-          `获取文件内容超时: ${safeFilename}`,
-          { filename: safeFilename, timeout: this.config.timeout, error }
-        );
+        throw new MCPError(ErrorCode.OSS_TIMEOUT_ERROR, `获取文件内容超时: ${safeFilename}`, {
+          filename: safeFilename,
+          timeout: this.config.timeout,
+          error,
+        });
       }
 
       if (this.isNotFoundError(error)) {
-        throw new MCPError(
-          ErrorCode.FILE_NOT_FOUND,
-          `文件不存在: ${safeFilename}`,
-          { filename: safeFilename, error }
-        );
+        throw new MCPError(ErrorCode.FILE_NOT_FOUND, `文件不存在: ${safeFilename}`, {
+          filename: safeFilename,
+          error,
+        });
       }
 
-      throw new MCPError(
-        ErrorCode.FILE_DOWNLOAD_FAILED,
-        `获取文件内容失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.FILE_DOWNLOAD_FAILED, `获取文件内容失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
@@ -347,33 +344,35 @@ export class OSSStorageService implements StorageService {
         prefix: safePrefix,
         marker: options?.marker,
         delimiter: options?.delimiter,
-        'encoding-type': options?.encodingType
+        'encoding-type': options?.encodingType,
       };
 
       const result = await this.client.list(listOptions, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
-      const objects = (result.objects || []).map(obj => ({
+      const objects = (result.objects || []).map((obj) => ({
         name: obj.name,
         size: obj.size,
         lastModified: new Date(obj.lastModified),
         etag: obj.etag,
         storageClass: obj.storageClass as StorageClass,
-        owner: obj.owner ? {
-          id: obj.owner.id,
-          displayName: obj.owner.displayName
-        } : {
-          id: '',
-          displayName: ''
-        },
-        url: `https://${this.config.bucket}.${this.config.region}.aliyuncs.com/${obj.name}`
+        owner: obj.owner
+          ? {
+              id: obj.owner.id,
+              displayName: obj.owner.displayName,
+            }
+          : {
+              id: '',
+              displayName: '',
+            },
+        url: `https://${this.config.bucket}.${this.config.region}.aliyuncs.com/${obj.name}`,
       }));
 
       const duration = Date.now() - startTime;
       this.log('info', '文件列表获取成功', {
         count: objects.length,
-        duration
+        duration,
       });
 
       return {
@@ -383,15 +382,11 @@ export class OSSStorageService implements StorageService {
         isTruncated: result.isTruncated,
         maxKeys: 100,
         prefix: safePrefix,
-        delimiter: ''
+        delimiter: '',
       };
     } catch (error) {
       this.log('error', '列出文件失败', { options, error });
-      throw new MCPError(
-        ErrorCode.OSS_CONNECTION_ERROR,
-        '列出文件失败',
-        { options, error }
-      );
+      throw new MCPError(ErrorCode.OSS_CONNECTION_ERROR, '列出文件失败', { options, error });
     }
   }
 
@@ -407,7 +402,7 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       await this.client.copy(safeTarget, safeSource, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const duration = Date.now() - startTime;
@@ -423,6 +418,90 @@ export class OSSStorageService implements StorageService {
   }
 
   /**
+   * 创建软链接
+   */
+  async createSymlink(
+    target: string,
+    symlink: string,
+    options?: CreateSymlinkOptions
+  ): Promise<SymlinkResult> {
+    const safeTarget = assertObjectKey(target, '目标文件路径', { allowAbsolute: true });
+    const safeSymlink = assertObjectKey(symlink, '软链接路径', { allowAbsolute: true });
+    try {
+      this.log('info', '创建软链接', {
+        target: safeTarget,
+        symlink: safeSymlink,
+        forbidOverwrite: options?.forbidOverwrite,
+      });
+
+      const startTime = Date.now();
+      const symlinkOptions: any = {
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
+        headers: {},
+      };
+
+      if (options?.forbidOverwrite) {
+        symlinkOptions.headers['x-oss-forbid-overwrite'] = 'true';
+      }
+      if (options?.storageClass) {
+        symlinkOptions.storageClass = options.storageClass;
+      }
+      if (options?.metadata) {
+        symlinkOptions.meta = options.metadata;
+      }
+
+      const result = await this.client.putSymlink(safeSymlink, safeTarget, symlinkOptions);
+      const headers = (result.res?.headers || {}) as Record<string, unknown>;
+      const getHeader = (name: string): string | undefined => {
+        const value = headers[name] ?? headers[name.toLowerCase()];
+        if (Array.isArray(value)) {
+          return value.length > 0 && value[0] !== undefined ? String(value[0]) : undefined;
+        }
+        return value === undefined || value === null ? undefined : String(value);
+      };
+
+      const duration = Date.now() - startTime;
+      this.log('info', '软链接创建成功', {
+        target: safeTarget,
+        symlink: safeSymlink,
+        duration,
+      });
+
+      const symlinkResult: SymlinkResult = {
+        symlink: safeSymlink,
+        target: safeTarget,
+      };
+      const requestId = getHeader('x-oss-request-id');
+      const versionId = getHeader('x-oss-version-id');
+
+      if (requestId) {
+        symlinkResult.requestId = requestId;
+      }
+      if (versionId) {
+        symlinkResult.versionId = versionId;
+      }
+
+      return symlinkResult;
+    } catch (error) {
+      this.log('error', '软链接创建失败', { target: safeTarget, symlink: safeSymlink, error });
+
+      if (this.isAuthError(error)) {
+        throw new MCPError(
+          ErrorCode.OSS_AUTHENTICATION_ERROR,
+          `OSS认证失败，无法创建软链接: ${safeSymlink}`,
+          { target: safeTarget, symlink: safeSymlink, error }
+        );
+      }
+
+      throw new MCPError(
+        ErrorCode.OSS_CONNECTION_ERROR,
+        `软链接创建失败: ${safeSymlink} -> ${safeTarget}`,
+        { target: safeTarget, symlink: safeSymlink, error }
+      );
+    }
+  }
+
+  /**
    * 获取文件元数据
    */
   async getFileMetadata(filename: string): Promise<FileMetadata> {
@@ -433,7 +512,7 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       const result = await this.client.head(safeFilename, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const duration = Date.now() - startTime;
@@ -466,13 +545,13 @@ export class OSSStorageService implements StorageService {
 
       const fileMetadata: FileMetadata = {
         name: safeFilename,
-        size: Number.isFinite(contentLength) ? contentLength : ((result as any).size || 0),
+        size: Number.isFinite(contentLength) ? contentLength : (result as any).size || 0,
         lastModified: new Date(lastModified || (result as any).lastModified || Date.now()),
         contentType: getHeader('content-type') || 'application/octet-stream',
         etag: getHeader('etag') || (result as any).etag || '',
         storageClass: (getHeader('x-oss-storage-class') as StorageClass) || 'Standard',
         expires: expires ? new Date(expires) : new Date(),
-        metadata
+        metadata,
       };
 
       const contentEncoding = getHeader('content-encoding');
@@ -502,18 +581,16 @@ export class OSSStorageService implements StorageService {
       this.log('error', '获取文件元数据失败', { filename: safeFilename, error });
 
       if (this.isNotFoundError(error)) {
-        throw new MCPError(
-          ErrorCode.FILE_NOT_FOUND,
-          `文件不存在: ${safeFilename}`,
-          { filename: safeFilename, error }
-        );
+        throw new MCPError(ErrorCode.FILE_NOT_FOUND, `文件不存在: ${safeFilename}`, {
+          filename: safeFilename,
+          error,
+        });
       }
 
-      throw new MCPError(
-        ErrorCode.OSS_CONNECTION_ERROR,
-        `获取文件元数据失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.OSS_CONNECTION_ERROR, `获取文件元数据失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
@@ -528,18 +605,18 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       await this.client.putACL(safeFilename, acl as any, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const duration = Date.now() - startTime;
       this.log('info', '文件权限设置成功', { filename: safeFilename, acl, duration });
     } catch (error) {
       this.log('error', '设置文件权限失败', { filename: safeFilename, acl, error });
-      throw new MCPError(
-        ErrorCode.OSS_PERMISSION_ERROR,
-        `设置文件权限失败: ${safeFilename}`,
-        { filename: safeFilename, acl, error }
-      );
+      throw new MCPError(ErrorCode.OSS_PERMISSION_ERROR, `设置文件权限失败: ${safeFilename}`, {
+        filename: safeFilename,
+        acl,
+        error,
+      });
     }
   }
 
@@ -554,7 +631,7 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       const result = await this.client.getACL(safeFilename, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const duration = Date.now() - startTime;
@@ -564,17 +641,16 @@ export class OSSStorageService implements StorageService {
         acl: result.acl,
         owner: {
           id: (result as any).owner?.id || '',
-          displayName: (result as any).owner?.displayName || ''
+          displayName: (result as any).owner?.displayName || '',
         },
-        grants: (result as any).grants || []
+        grants: (result as any).grants || [],
       };
     } catch (error) {
       this.log('error', '获取文件权限失败', { filename: safeFilename, error });
-      throw new MCPError(
-        ErrorCode.OSS_PERMISSION_ERROR,
-        `获取文件权限失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.OSS_PERMISSION_ERROR, `获取文件权限失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
@@ -582,7 +658,7 @@ export class OSSStorageService implements StorageService {
    * 批量删除文件
    */
   async deleteMultipleFiles(filenames: string[]): Promise<BatchDeleteResult> {
-    const safeFilenames = filenames.map(filename => assertObjectKey(filename, '文件名'));
+    const safeFilenames = filenames.map((filename) => assertObjectKey(filename, '文件名'));
     try {
       this.log('info', '批量删除文件', { count: safeFilenames.length });
 
@@ -590,7 +666,7 @@ export class OSSStorageService implements StorageService {
 
       const result = await this.client.deleteMulti(safeFilenames, {
         quiet: false,
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 120000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 120000,
       });
 
       const duration = Date.now() - startTime;
@@ -598,23 +674,22 @@ export class OSSStorageService implements StorageService {
         total: safeFilenames.length,
         deleted: result.deleted?.length || 0,
         errors: (result as any).errors?.length || 0,
-        duration
+        duration,
       });
 
       return {
         deleted: (result.deleted || []).map((item: any) => ({
           key: typeof item === 'string' ? item : item.key || '',
-          versionId: typeof item === 'string' ? undefined : item.versionId
+          versionId: typeof item === 'string' ? undefined : item.versionId,
         })),
-        errors: (result as any).errors || []
+        errors: (result as any).errors || [],
       };
     } catch (error) {
       this.log('error', '批量删除文件失败', { filenames: safeFilenames, error });
-      throw new MCPError(
-        ErrorCode.FILE_DELETE_FAILED,
-        '批量删除文件失败',
-        { filenames: safeFilenames, error }
-      );
+      throw new MCPError(ErrorCode.FILE_DELETE_FAILED, '批量删除文件失败', {
+        filenames: safeFilenames,
+        error,
+      });
     }
   }
 
@@ -646,38 +721,50 @@ export class OSSStorageService implements StorageService {
       this.log('info', '分片上传初始化成功', {
         filename: safeFilename,
         uploadId: result.uploadId,
-        duration
+        duration,
       });
 
       return result.uploadId;
     } catch (error) {
       this.log('error', '初始化分片上传失败', { filename: safeFilename, error });
-      throw new MCPError(
-        ErrorCode.MULTIPART_INIT_FAILED,
-        `初始化分片上传失败: ${safeFilename}`,
-        { filename: safeFilename, error }
-      );
+      throw new MCPError(ErrorCode.MULTIPART_INIT_FAILED, `初始化分片上传失败: ${safeFilename}`, {
+        filename: safeFilename,
+        error,
+      });
     }
   }
 
   /**
    * 上传分片
    */
-  async uploadPart(filename: string, uploadId: string, partNumber: number, content: Buffer): Promise<PartResult> {
+  async uploadPart(
+    filename: string,
+    uploadId: string,
+    partNumber: number,
+    content: Buffer
+  ): Promise<PartResult> {
     const safeFilename = assertObjectKey(filename, '文件名');
     try {
       this.log('info', '上传分片', {
         filename: safeFilename,
         uploadId,
         partNumber,
-        size: content.length
+        size: content.length,
       });
 
       const startTime = Date.now();
 
-      const result = await this.client.uploadPart(safeFilename, uploadId, partNumber, content, 0, content.length, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 300000
-      });
+      const result = await this.client.uploadPart(
+        safeFilename,
+        uploadId,
+        partNumber,
+        content,
+        0,
+        content.length,
+        {
+          timeout: this.config.timeout ? this.config.timeout * 1000 : 300000,
+        }
+      );
 
       const duration = Date.now() - startTime;
       this.log('info', '分片上传成功', {
@@ -685,13 +772,13 @@ export class OSSStorageService implements StorageService {
         uploadId,
         partNumber,
         etag: result.etag,
-        duration
+        duration,
       });
 
       return {
         partNumber: partNumber,
         etag: result.etag,
-        size: content.length
+        size: content.length,
       };
     } catch (error) {
       this.log('error', '分片上传失败', { filename: safeFilename, uploadId, partNumber, error });
@@ -706,19 +793,23 @@ export class OSSStorageService implements StorageService {
   /**
    * 完成分片上传
    */
-  async completeMultipartUpload(filename: string, uploadId: string, parts: PartInfo[]): Promise<CompleteMultipartResult> {
+  async completeMultipartUpload(
+    filename: string,
+    uploadId: string,
+    parts: PartInfo[]
+  ): Promise<CompleteMultipartResult> {
     const safeFilename = assertObjectKey(filename, '文件名');
     try {
       this.log('info', '完成分片上传', {
         filename: safeFilename,
         uploadId,
-        partsCount: parts.length
+        partsCount: parts.length,
       });
 
       const startTime = Date.now();
 
       const result = await this.client.completeMultipartUpload(safeFilename, uploadId, parts, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 300000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 300000,
       });
 
       const duration = Date.now() - startTime;
@@ -727,7 +818,7 @@ export class OSSStorageService implements StorageService {
         uploadId,
         location: (result as any).location || '',
         etag: result.etag,
-        duration
+        duration,
       });
 
       return {
@@ -736,15 +827,15 @@ export class OSSStorageService implements StorageService {
         bucket: result.bucket,
         key: (result as any).key || safeFilename,
         etag: result.etag,
-        size: parts.reduce((total, part) => total + (part.size || 0), 0)
+        size: parts.reduce((total, part) => total + (part.size || 0), 0),
       };
     } catch (error) {
       this.log('error', '完成分片上传失败', { filename: safeFilename, uploadId, error });
-      throw new MCPError(
-        ErrorCode.MULTIPART_COMPLETE_FAILED,
-        `完成分片上传失败: ${safeFilename}`,
-        { filename: safeFilename, uploadId, error }
-      );
+      throw new MCPError(ErrorCode.MULTIPART_COMPLETE_FAILED, `完成分片上传失败: ${safeFilename}`, {
+        filename: safeFilename,
+        uploadId,
+        error,
+      });
     }
   }
 
@@ -759,25 +850,30 @@ export class OSSStorageService implements StorageService {
       const startTime = Date.now();
 
       await this.client.abortMultipartUpload(safeFilename, uploadId, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const duration = Date.now() - startTime;
       this.log('info', '分片上传已取消', { filename: safeFilename, uploadId, duration });
     } catch (error) {
       this.log('error', '取消分片上传失败', { filename: safeFilename, uploadId, error });
-      throw new MCPError(
-        ErrorCode.OSS_CONNECTION_ERROR,
-        `取消分片上传失败: ${safeFilename}`,
-        { filename: safeFilename, uploadId, error }
-      );
+      throw new MCPError(ErrorCode.OSS_CONNECTION_ERROR, `取消分片上传失败: ${safeFilename}`, {
+        filename: safeFilename,
+        uploadId,
+        error,
+      });
     }
   }
 
   /**
    * 列出进行中的分片上传
    */
-  async listMultipartUploads(options?: { prefix?: string; maxUploads?: number; keyMarker?: string; uploadIdMarker?: string; }): Promise<MultipartListResult> {
+  async listMultipartUploads(options?: {
+    prefix?: string;
+    maxUploads?: number;
+    keyMarker?: string;
+    uploadIdMarker?: string;
+  }): Promise<MultipartListResult> {
     const safePrefix = assertObjectPrefix(options?.prefix ?? '', '文件前缀');
     try {
       this.log('info', '列出进行中的分片上传', { options: { ...options, prefix: safePrefix } });
@@ -788,11 +884,11 @@ export class OSSStorageService implements StorageService {
         'max-uploads': options?.maxUploads ?? 100,
         prefix: safePrefix,
         'key-marker': options?.keyMarker,
-        'upload-id-marker': options?.uploadIdMarker
+        'upload-id-marker': options?.uploadIdMarker,
       };
 
       const result = await this.client.listUploads(listOptions, {
-        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000
+        timeout: this.config.timeout ? this.config.timeout * 1000 : 60000,
       });
 
       const uploads = (result.uploads || []).map((upload: any) => ({
@@ -802,14 +898,14 @@ export class OSSStorageService implements StorageService {
         initiated: new Date(upload.initiated || Date.now()),
         owner: {
           id: upload.owner?.id || '',
-          displayName: upload.owner?.displayName || ''
-        }
+          displayName: upload.owner?.displayName || '',
+        },
       }));
 
       const duration = Date.now() - startTime;
       this.log('info', '分片上传列表获取成功', {
         count: uploads.length,
-        duration
+        duration,
       });
 
       return {
@@ -819,15 +915,11 @@ export class OSSStorageService implements StorageService {
         nextKeyMarker: result.nextKeyMarker,
         nextUploadIdMarker: result.nextUploadIdMarker,
         maxUploads: (result as any).maxUploads || 100,
-        prefix: (result as any).prefix || ''
+        prefix: (result as any).prefix || '',
       };
     } catch (error) {
       this.log('error', '列出分片上传失败', { options, error });
-      throw new MCPError(
-        ErrorCode.OSS_CONNECTION_ERROR,
-        '列出分片上传失败',
-        { options, error }
-      );
+      throw new MCPError(ErrorCode.OSS_CONNECTION_ERROR, '列出分片上传失败', { options, error });
     }
   }
 
@@ -871,21 +963,24 @@ export class OSSStorageService implements StorageService {
    * 错误类型判断辅助方法
    */
   private isTimeoutError(error: any): boolean {
-    return error.name === 'ConnectionTimeoutError' ||
-           error.code === 'ConnectionTimeout' ||
-           error.message?.includes('timeout');
+    return (
+      error.name === 'ConnectionTimeoutError' ||
+      error.code === 'ConnectionTimeout' ||
+      error.message?.includes('timeout')
+    );
   }
 
   private isAuthError(error: any): boolean {
-    return error.code === 'AccessDenied' ||
-           error.code === 'InvalidAccessKeyId' ||
-           error.code === 'SignatureDoesNotMatch' ||
-           error.status === 403;
+    return (
+      error.code === 'AccessDenied' ||
+      error.code === 'InvalidAccessKeyId' ||
+      error.code === 'SignatureDoesNotMatch' ||
+      error.status === 403
+    );
   }
 
   private isNotFoundError(error: any): boolean {
-    return error.code === 'NoSuchKey' ||
-           error.status === 404;
+    return error.code === 'NoSuchKey' || error.status === 404;
   }
 }
 

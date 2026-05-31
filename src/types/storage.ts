@@ -82,6 +82,18 @@ export interface StorageService {
   copyFile?(source: string, target: string): Promise<void>;
 
   /**
+   * 创建软链接
+   * @param target 软链接指向的目标文件路径
+   * @param symlink 软链接文件路径
+   * @param options 创建选项
+   */
+  createSymlink?(
+    target: string,
+    symlink: string,
+    options?: CreateSymlinkOptions
+  ): Promise<SymlinkResult>;
+
+  /**
    * 获取文件元数据
    * @param filename 文件名
    */
@@ -176,6 +188,32 @@ export enum StorageClass {
   INFREQUENT_ACCESS = 'IA',
   ARCHIVE = 'Archive',
   COLD_ARCHIVE = 'ColdArchive'
+}
+
+/**
+ * 创建软链接选项
+ */
+export interface CreateSymlinkOptions {
+  /** 是否禁止覆盖同名Object */
+  forbidOverwrite?: boolean;
+  /** 存储类型 */
+  storageClass?: StorageClass;
+  /** 自定义元数据 */
+  metadata?: Record<string, string>;
+}
+
+/**
+ * 软链接创建结果
+ */
+export interface SymlinkResult {
+  /** 软链接文件路径 */
+  symlink: string;
+  /** 软链接指向的目标文件路径 */
+  target: string;
+  /** 请求ID */
+  requestId?: string;
+  /** 版本ID */
+  versionId?: string;
 }
 
 /**
@@ -419,28 +457,28 @@ export interface MultipartListResult {
 export interface StorageBackend {
   /** 后端名称 */
   name: string;
-  
+
   /** 后端类型 */
   type: 'oss' | 's3' | 'gcs' | 'azure' | 'local';
-  
+
   /** 上传文件 */
   uploadFile(content: Buffer, fileName: string, options?: UploadOptions): Promise<UploadResult>;
-  
+
   /** 下载文件 */
   downloadFile(fileName: string): Promise<Buffer>;
-  
+
   /** 删除文件 */
   deleteFile(fileName: string): Promise<void>;
-  
+
   /** 列出文件 */
   listFiles(options?: ListFilesOptions): Promise<FileInfo[]>;
-  
+
   /** 生成临时URL */
   generateTempUrl(fileName: string, expires: number): Promise<string>;
-  
+
   /** 检查连接 */
   checkConnection(): Promise<boolean>;
-  
+
   /** 获取配置 */
   getConfig(): StorageConfig;
 }

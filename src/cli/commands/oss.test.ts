@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 
 import { ErrorCode, MCPError } from '../../types/index.js';
 import type { FileMetadata, StorageConfig, StorageService } from '../../storage/index.js';
+import { CliError } from '../errors.js';
 import { parseCliArgs } from '../parser.js';
 import { createOssCommands } from './oss.js';
 
@@ -12,7 +13,7 @@ const ENV_KEYS = [
   'OSS_ACCESS_KEY_SECRET',
   'OSS_BUCKET',
   'OSS_REGION',
-  'NODE_ENV'
+  'NODE_ENV',
 ] as const;
 
 describe('OSS CLI commands', () => {
@@ -90,14 +91,14 @@ describe('OSS CLI commands', () => {
       '--marker',
       'next',
       '--delimiter',
-      '/'
+      '/',
     ]);
 
     expect(storage.listFiles).toHaveBeenCalledWith({
       prefix: 'documents/',
       maxKeys: 10,
       marker: 'next',
-      delimiter: '/'
+      delimiter: '/',
     });
     expect(result.data.count).toBe(1);
     expect(result.data.objects).toEqual([
@@ -107,8 +108,8 @@ describe('OSS CLI commands', () => {
         lastModified: '2026-05-29T12:00:00.000Z',
         etag: 'etag-report',
         storageClass: 'Standard',
-        contentType: 'text/plain'
-      }
+        contentType: 'text/plain',
+      },
     ]);
   });
 
@@ -121,12 +122,47 @@ describe('OSS CLI commands', () => {
       'copy',
       'documents/source.txt',
       'documents/target.txt',
-      '--no-overwrite'
+      '--no-overwrite',
     ]);
 
     expect(storage.copyFile).toHaveBeenCalledWith('documents/source.txt', 'documents/target.txt');
     expect(result.data.overwrite).toBe(false);
     expect(result.data.success).toBe(true);
+  });
+
+  it('creates a symlink from an absolute OSS path', async () => {
+    const result = await runCommand([
+      'symlink',
+      '/documents/source.txt',
+      '/shortcuts/latest.txt',
+      '--no-overwrite',
+    ]);
+
+    expect(storage.createSymlink).toHaveBeenCalledWith(
+      'documents/source.txt',
+      'shortcuts/latest.txt',
+      { forbidOverwrite: true }
+    );
+    expect(result.data).toMatchObject({
+      target: 'documents/source.txt',
+      symlink: 'shortcuts/latest.txt',
+      symlinkPath: '/shortcuts/latest.txt',
+      success: true,
+      overwrite: false,
+      versionId: 'version-link',
+    });
+  });
+
+  it('rejects a symlink that points to itself after absolute path normalization', async () => {
+    let caught: unknown;
+    try {
+      await runCommand(['symlink', '/documents/source.txt', 'documents/source.txt']);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(CliError);
+    expect(storage.createSymlink).not.toHaveBeenCalled();
   });
 
   it('returns object metadata', async () => {
@@ -139,7 +175,7 @@ describe('OSS CLI commands', () => {
       size: 9,
       contentType: 'text/plain',
       etag: 'etag-report',
-      storageClass: 'Standard'
+      storageClass: 'Standard',
     });
   });
 
@@ -155,7 +191,7 @@ describe('OSS CLI commands', () => {
         receivedConfig = config;
         return storage;
       },
-      now: () => new Date('2026-05-29T12:00:00.000Z')
+      now: () => new Date('2026-05-29T12:00:00.000Z'),
     }).find((item) => item.name === parsed.command);
 
     if (!command) {
@@ -179,12 +215,17 @@ function createMockStorage(): StorageService {
       nextMarker: 'next-marker',
       isTruncated: false,
       maxKeys: 10,
-      prefix: 'documents/'
+      prefix: 'documents/',
     })),
     copyFile: jest.fn(),
+    createSymlink: jest.fn(async (target: string, symlink: string) => ({
+      target,
+      symlink,
+      versionId: 'version-link',
+    })),
     getFileMetadata: jest.fn(async (filename: string) => createMetadata(filename)),
     checkConnection: jest.fn(async () => true),
-    getConfig: jest.fn()
+    getConfig: jest.fn(),
   };
 }
 
@@ -197,7 +238,7 @@ function createMetadata(name: string): FileMetadata {
     etag: 'etag-report',
     storageClass: 'Standard',
     metadata: {
-      owner: 'cli-test'
-    }
+      owner: 'cli-test',
+    },
   };
 }
