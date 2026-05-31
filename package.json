@@ -1,5 +1,5 @@
 {
-  "name": "aigroup-aliyunoss-mcp",
+  "name": "@rockjing/aliyunoss-cli",
   "version": "1.1.0",
   "description": "阿里云 OSS CLI 工具，保留 MCP stdio 兼容入口",
   "type": "module",
@@ -52,6 +52,9 @@
   ],
   "author": "aigroup-aliyunoss-mcp team",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/jackdark425/aigroup-aliyunoss-mcp#readme",
   "repository": {
     "type": "git",
