@@ -50,7 +50,7 @@
     "typescript",
     "nodejs"
   ],
-  "author": "aigroup-aliyunoss-mcp team",
+  "author": "rockjing",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

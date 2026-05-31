@@ -1,8 +1,8 @@
 # aliyunoss-cli
 
-**文档版本**: 1.3.0
-**最后更新**: 2026-05-31 16:08 CST
-**变更摘要**: 补充 CLI 创建 OSS 软链接和绝对路径写法的用法示例。
+**文档版本**: 1.4.0
+**最后更新**: 2026-05-31 16:13 CST
+**变更摘要**: 补充项目来源说明并保留原始 Git 仓库地址。
 
 ## 应用说明
 
@@ -21,6 +21,10 @@
 - **兼容命令**: `aigroup-aliyunoss-mcp --stdio`
 - **作用**: 过渡期保留旧 MCP 客户端接入方式，让支持 MCP 的 AI 客户端继续调用 OSS 工具。
 - **策略**: CLI 是主入口；MCP stdio 仅作为兼容入口保留。
+
+## 来源说明
+
+本项目由原始仓库 `https://github.com/jackdark425/aigroup-aliyunoss-mcp` 迁移和延续维护而来，当前维护仓库为 `https://github.com/rockjing/aliyunoss-cli`。
 
 ## 安装和构建
 
