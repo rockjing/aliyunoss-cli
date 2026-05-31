@@ -55,13 +55,13 @@ export function createCoreCommands(): CliCommand[] {
       name: 'validate-config',
       aliases: ['validate'],
       summary: '验证当前配置并输出脱敏摘要',
-      usage: `${TOOL_NAME} validate-config [--json] [--config <path>]`,
+      usage: `${TOOL_NAME} validate-config [--json] [--config <path>] [--credentials <path>]`,
       run: runValidateConfig
     },
     {
       name: 'health',
       summary: '检查配置、OSS 连接和本地运行状态',
-      usage: `${TOOL_NAME} health [--json] [--config <path>]`,
+      usage: `${TOOL_NAME} health [--json] [--config <path>] [--credentials <path>]`,
       run: runHealth
     },
     {
@@ -105,6 +105,7 @@ Commands:
 Global options:
   --json               Print stable JSON output
   --config <path>      Load a specific config file
+  --credentials <path> Load OSS credentials from a JSON file
   --profile <name>     Reserved profile name for future config support
   --log-level <level>  Set log level for the current run
   --dry-run            Reserved for dangerous commands
@@ -115,7 +116,7 @@ Global options:
 Examples:
   aliyunoss-cli --help
   aliyunoss-cli --version
-  aliyunoss-cli validate-config --json
+  aliyunoss-cli validate-config --credentials ./credentials.json --json
   aliyunoss-cli health
   aliyunoss-cli upload ./report.pdf --key documents/report.pdf
   aliyunoss-cli list --prefix documents/ --max-keys 10 --json
@@ -129,7 +130,10 @@ async function runValidateConfig({ parsed }: CliCommandContext): Promise<CliComm
   ensureNoExtraArgs(parsed, 'validate-config');
   applyLogLevel(parsed.options.logLevel);
 
-  const configManager = createConfigManager({ configFile: parsed.options.configFile });
+  const configManager = createConfigManager({
+    configFile: parsed.options.configFile,
+    credentialsFile: parsed.options.credentialsFile
+  });
   await withConsoleLogsOnStderr(() => configManager.loadConfig());
 
   const summary = configManager.getConfigSummary();
@@ -145,7 +149,10 @@ async function runHealth({ parsed }: CliCommandContext): Promise<CliCommandResul
   applyLogLevel(parsed.options.logLevel);
 
   const startedAt = Date.now();
-  const configManager = createConfigManager({ configFile: parsed.options.configFile });
+  const configManager = createConfigManager({
+    configFile: parsed.options.configFile,
+    credentialsFile: parsed.options.credentialsFile
+  });
   await withConsoleLogsOnStderr(() => configManager.loadConfig());
 
   const memory = process.memoryUsage();

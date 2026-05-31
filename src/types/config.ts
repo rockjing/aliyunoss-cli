@@ -579,6 +579,8 @@ export interface ConfigChangeEvent {
 export interface ConfigLoadOptions {
   /** 配置文件路径 */
   configFile?: string | undefined;
+  /** OSS凭据JSON文件路径 */
+  credentialsFile?: string | undefined;
   /** 环境变量前缀 */
   envPrefix?: string;
   /** 是否验证配置 */

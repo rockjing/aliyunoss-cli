@@ -30,6 +30,7 @@ import { redactSensitiveDetails } from '../security/redaction.js';
 export class ConfigManager extends EventEmitter {
   private config: AppConfigType;
   private configFile?: string | undefined;
+  private credentialsFile?: string | undefined;
   private watchEnabled: boolean;
   private loaded: boolean;
 
@@ -38,6 +39,7 @@ export class ConfigManager extends EventEmitter {
     
     this.config = { ...defaultConfig };
     this.configFile = options.configFile;
+    this.credentialsFile = options.credentialsFile;
     this.watchEnabled = options.watch || false;
     this.loaded = false;
 
@@ -68,12 +70,19 @@ export class ConfigManager extends EventEmitter {
       console.log('[Config] 加载环境变量配置...');
       const envConfig = this.loadEnvironmentConfig();
       config = this.mergeConfig(config, envConfig);
+
+      // 4. 加载显式 OSS 凭据文件，优先级高于环境变量
+      if (this.credentialsFile) {
+        console.log(`[Config] 加载OSS凭据文件: ${this.credentialsFile}`);
+        const credentialsConfig = this.loadCredentialsFile(this.credentialsFile);
+        config = this.mergeConfig(config, credentialsConfig);
+      }
       
-      // 4. 验证配置
+      // 5. 验证配置
       console.log('[Config] 验证配置...');
       this.config = this.validateConfig(config);
       
-      // 5. 启用配置文件监听
+      // 6. 启用配置文件监听
       if (this.watchEnabled && this.configFile) {
         this.enableConfigWatch();
       }
@@ -371,6 +380,76 @@ export class ConfigManager extends EventEmitter {
   }
 
   /**
+   * 加载 OSS 凭据 JSON 文件
+   */
+  private loadCredentialsFile(filePath: string): Partial<AppConfigType> {
+    try {
+      const absolutePath = resolve(filePath);
+      if (!existsSync(absolutePath)) {
+        throw new Error(`凭据文件不存在: ${filePath}`);
+      }
+
+      const content = readFileSync(absolutePath, 'utf-8');
+      const parsed: unknown = JSON.parse(content);
+      if (!isObjectRecord(parsed)) {
+        throw new Error('凭据文件必须是JSON对象');
+      }
+
+      const source = isObjectRecord(parsed.oss) ? parsed.oss : parsed;
+      const oss: Partial<OSSConfigType> = {};
+      const accessKeyId = readStringField(source, 'accessKeyId', 'OSS_ACCESS_KEY_ID');
+      const accessKeySecret = readStringField(source, 'accessKeySecret', 'OSS_ACCESS_KEY_SECRET');
+      const bucket = readStringField(source, 'bucket', 'OSS_BUCKET');
+      const region = readStringField(source, 'region', 'OSS_REGION');
+      const secure = readBooleanField(source, 'secure', 'OSS_SECURE');
+      const timeout = readNumberField(source, 'timeout', 'OSS_TIMEOUT');
+      const internal = readBooleanField(source, 'internal', 'OSS_INTERNAL');
+      const cname = readStringField(source, 'cname', 'OSS_CNAME');
+      const stsToken = readStringField(source, 'stsToken', 'OSS_STS_TOKEN', 'STS_TOKEN');
+
+      if (accessKeyId) {
+        oss.accessKeyId = accessKeyId;
+      }
+      if (accessKeySecret) {
+        oss.accessKeySecret = accessKeySecret;
+      }
+      if (bucket) {
+        oss.bucket = bucket;
+      }
+      if (region) {
+        oss.region = region;
+      }
+      if (secure !== undefined) {
+        oss.secure = secure;
+      }
+      if (timeout !== undefined) {
+        oss.timeout = timeout;
+      }
+      if (internal !== undefined) {
+        oss.internal = internal;
+      }
+      if (cname) {
+        oss.cname = cname;
+      }
+      if (stsToken) {
+        oss.stsToken = stsToken;
+      }
+
+      if (Object.keys(oss).length === 0) {
+        throw new Error('凭据文件未包含支持的OSS凭据字段');
+      }
+
+      return { oss } as Partial<AppConfigType>;
+    } catch (error) {
+      throw new MCPError(
+        ErrorCode.CONFIG_INVALID,
+        `加载OSS凭据文件失败: ${error instanceof Error ? error.message : String(error)}`,
+        redactSensitiveDetails({ filePath, error })
+      );
+    }
+  }
+
+  /**
    * 加载环境变量配置
    */
   private loadEnvironmentConfig(): Partial<AppConfigType> {
@@ -575,6 +654,55 @@ export class ConfigManager extends EventEmitter {
     console.log(`[Config] 禁用配置文件监听: ${this.configFile}`);
     unwatchFile(this.configFile);
   }
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readStringField(source: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readBooleanField(source: Record<string, unknown>, ...keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const normalized = value.trim().toLowerCase();
+      if (['true', '1', 'yes'].includes(normalized)) {
+        return true;
+      }
+      if (['false', '0', 'no'].includes(normalized)) {
+        return false;
+      }
+    }
+  }
+  return undefined;
+}
+
+function readNumberField(source: Record<string, unknown>, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
 }
 
 /**

@@ -16,6 +16,8 @@ describe('CLI argument parser', () => {
       '--json',
       '--config',
       './config.json',
+      '--credentials',
+      './credentials.json',
       '--profile=prod',
       '--log-level',
       'debug'
@@ -24,6 +26,7 @@ describe('CLI argument parser', () => {
     expect(parsed.command).toBe('validate-config');
     expect(parsed.options.json).toBe(true);
     expect(parsed.options.configFile).toBe('./config.json');
+    expect(parsed.options.credentialsFile).toBe('./credentials.json');
     expect(parsed.options.profile).toBe('prod');
     expect(parsed.options.logLevel).toBe('debug');
   });
@@ -54,6 +57,7 @@ describe('CLI argument parser', () => {
 
   it('throws argument errors for missing option values', () => {
     expect(() => parseCliArgs(['--config'])).toThrow(CliError);
+    expect(() => parseCliArgs(['--credentials'])).toThrow(CliError);
     expect(() => parseCliArgs(['--profile='])).toThrow(CliError);
   });
 

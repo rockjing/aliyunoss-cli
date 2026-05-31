@@ -11,6 +11,7 @@ import type { CliOptions, ParsedCliArgs } from './types.js';
 
 const VALUE_OPTIONS = new Set([
   '--config',
+  '--credentials',
   '--profile',
   '--log-level',
   '--key',
@@ -137,6 +138,9 @@ function consumeOption(
       return 0;
     case '--config':
       options.configFile = readOptionValue(args, index, name, inlineValue);
+      return inlineValue === undefined ? 1 : 0;
+    case '--credentials':
+      options.credentialsFile = readOptionValue(args, index, name, inlineValue);
       return inlineValue === undefined ? 1 : 0;
     case '--profile':
       options.profile = readOptionValue(args, index, name, inlineValue);

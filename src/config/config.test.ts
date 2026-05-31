@@ -1,3 +1,7 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
 import { ConfigManager } from './config.js';
 import { defaultConfig } from './schema.js';
 import { MCPError } from '../types/index.js';
@@ -75,6 +79,80 @@ describe('ConfigManager secret redaction', () => {
       const serialized = JSON.stringify((error as MCPError).toJSON());
       expect(serialized).toContain(REDACTED_VALUE);
       expect(serialized).not.toContain('super-secret-value');
+    }
+  });
+
+  it('loads OSS credentials from an explicit JSON file with environment-style fields', async () => {
+    for (const key of ENV_KEYS) {
+      delete process.env[key];
+    }
+
+    const tempDir = mkdtempSync(join(tmpdir(), 'aliyunoss-credentials-'));
+    const credentialsFile = join(tempDir, 'credentials.json');
+    writeFileSync(
+      credentialsFile,
+      JSON.stringify({
+        OSS_ACCESS_KEY_ID: 'LTAI_FILE_1234567890',
+        OSS_ACCESS_KEY_SECRET: 'file-secret-value',
+        OSS_BUCKET: 'file-bucket',
+        OSS_REGION: 'oss-cn-beijing',
+        OSS_SECURE: 'false',
+        OSS_TIMEOUT: '45'
+      })
+    );
+
+    try {
+      const manager = new ConfigManager({ credentialsFile });
+      await manager.loadConfig();
+      const runtimeConfig = manager.getOSSRuntimeConfig();
+      const summary = JSON.stringify(manager.getConfigSummary());
+
+      expect(runtimeConfig).toMatchObject({
+        accessKeyId: 'LTAI_FILE_1234567890',
+        accessKeySecret: 'file-secret-value',
+        bucket: 'file-bucket',
+        region: 'oss-cn-beijing',
+        secure: false,
+        timeout: 45
+      });
+      expect(summary).not.toContain('file-secret-value');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('lets explicit nested OSS credentials override environment variables', async () => {
+    process.env.OSS_ACCESS_KEY_ID = 'LTAI_ENV_1234567890';
+    process.env.OSS_ACCESS_KEY_SECRET = 'env-secret-value';
+    process.env.OSS_BUCKET = 'env-bucket';
+    process.env.OSS_REGION = 'oss-cn-hangzhou';
+    process.env.NODE_ENV = 'testing';
+
+    const tempDir = mkdtempSync(join(tmpdir(), 'aliyunoss-credentials-'));
+    const credentialsFile = join(tempDir, 'credentials.json');
+    writeFileSync(
+      credentialsFile,
+      JSON.stringify({
+        oss: {
+          accessKeyId: 'LTAI_JSON_1234567890',
+          accessKeySecret: 'json-secret-value',
+          bucket: 'json-bucket',
+          region: 'oss-cn-shanghai'
+        }
+      })
+    );
+
+    try {
+      const manager = new ConfigManager({ credentialsFile });
+      await manager.loadConfig();
+      const runtimeConfig = manager.getOSSRuntimeConfig();
+
+      expect(runtimeConfig.accessKeyId).toBe('LTAI_JSON_1234567890');
+      expect(runtimeConfig.accessKeySecret).toBe('json-secret-value');
+      expect(runtimeConfig.bucket).toBe('json-bucket');
+      expect(runtimeConfig.region).toBe('oss-cn-shanghai');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
     }
   });
 });

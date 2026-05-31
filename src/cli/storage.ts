@@ -25,7 +25,10 @@ export async function createCliStorageRuntime(
   parsed: ParsedCliArgs,
   createStorage: CliStorageFactory = createDefaultStorage
 ): Promise<CliStorageRuntime> {
-  const configManager = createConfigManager({ configFile: parsed.options.configFile });
+  const configManager = createConfigManager({
+    configFile: parsed.options.configFile,
+    credentialsFile: parsed.options.credentialsFile
+  });
   await withConsoleLogsOnStderr(() => configManager.loadConfig());
   const ossConfig = configManager.getOSSRuntimeConfig();
 

@@ -18,6 +18,7 @@ export interface CliOptions {
   yes: boolean;
   dryRun: boolean;
   configFile?: string;
+  credentialsFile?: string;
   profile?: string;
   logLevel?: string;
 }
