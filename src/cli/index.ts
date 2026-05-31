@@ -10,7 +10,8 @@
 
 import 'dotenv/config';
 
-import { pathToFileURL } from 'url';
+import { realpathSync } from 'fs';
+import { fileURLToPath } from 'url';
 
 import { CliError, CliExitCode, normalizeCliError } from './errors.js';
 import { writeError, writeSuccess } from './output.js';
@@ -83,5 +84,13 @@ if (isDirectRun()) {
 
 function isDirectRun(): boolean {
   const entry = process.argv[1];
-  return entry ? import.meta.url === pathToFileURL(entry).href : false;
+  if (!entry) {
+    return false;
+  }
+
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
 }

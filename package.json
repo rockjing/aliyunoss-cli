@@ -1,6 +1,6 @@
 {
   "name": "@rockjing/aliyunoss-cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "阿里云 OSS CLI 工具，保留 MCP stdio 兼容入口",
   "type": "module",
   "main": "build/cli/index.js",
