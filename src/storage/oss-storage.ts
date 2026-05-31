@@ -439,6 +439,18 @@ export class OSSStorageService implements StorageService {
       const duration = Date.now() - startTime;
       this.log('info', '文件元数据获取成功', { filename: safeFilename, duration });
 
+      const headers = (result.res?.headers || {}) as Record<string, unknown>;
+      const getHeader = (name: string): string | undefined => {
+        const value = headers[name] ?? headers[name.toLowerCase()];
+        if (Array.isArray(value)) {
+          return value.length > 0 && value[0] !== undefined ? String(value[0]) : undefined;
+        }
+        return value === undefined || value === null ? undefined : String(value);
+      };
+      const contentLength = Number(getHeader('content-length'));
+      const lastModified = getHeader('last-modified');
+      const expires = getHeader('expires');
+
       // 解析自定义元数据
       const metadata: Record<string, string> = {};
       for (const [key, value] of Object.entries(result.meta || {})) {
@@ -446,22 +458,46 @@ export class OSSStorageService implements StorageService {
           metadata[key.replace('x-oss-meta-', '')] = value as string;
         }
       }
+      for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase().startsWith('x-oss-meta-') && value !== undefined && value !== null) {
+          metadata[key.toLowerCase().replace('x-oss-meta-', '')] = String(value);
+        }
+      }
 
-      return {
+      const fileMetadata: FileMetadata = {
         name: safeFilename,
-        size: (result as any).size || 0,
-        lastModified: new Date((result as any).lastModified || Date.now()),
-        contentType: (result.res?.headers as any)?.['content-type'] || 'application/octet-stream',
-        etag: (result as any).etag || '',
-        storageClass: ((result.res?.headers as any)?.['x-oss-storage-class'] as StorageClass) || 'Standard',
-        contentEncoding: (result.res?.headers as any)?.['content-encoding'],
-        contentLanguage: (result.res?.headers as any)?.['content-language'],
-        cacheControl: (result.res?.headers as any)?.['cache-control'],
-        contentDisposition: (result.res?.headers as any)?.['content-disposition'],
-        expires: (result.res?.headers as any)?.['expires'] ? new Date((result.res?.headers as any)?.['expires']) : new Date(),
-        metadata,
-        versionId: (result as any).versionId
+        size: Number.isFinite(contentLength) ? contentLength : ((result as any).size || 0),
+        lastModified: new Date(lastModified || (result as any).lastModified || Date.now()),
+        contentType: getHeader('content-type') || 'application/octet-stream',
+        etag: getHeader('etag') || (result as any).etag || '',
+        storageClass: (getHeader('x-oss-storage-class') as StorageClass) || 'Standard',
+        expires: expires ? new Date(expires) : new Date(),
+        metadata
       };
+
+      const contentEncoding = getHeader('content-encoding');
+      const contentLanguage = getHeader('content-language');
+      const cacheControl = getHeader('cache-control');
+      const contentDisposition = getHeader('content-disposition');
+      const versionId = (result as any).versionId;
+
+      if (contentEncoding) {
+        fileMetadata.contentEncoding = contentEncoding;
+      }
+      if (contentLanguage) {
+        fileMetadata.contentLanguage = contentLanguage;
+      }
+      if (cacheControl) {
+        fileMetadata.cacheControl = cacheControl;
+      }
+      if (contentDisposition) {
+        fileMetadata.contentDisposition = contentDisposition;
+      }
+      if (versionId) {
+        fileMetadata.versionId = versionId;
+      }
+
+      return fileMetadata;
     } catch (error) {
       this.log('error', '获取文件元数据失败', { filename: safeFilename, error });
 

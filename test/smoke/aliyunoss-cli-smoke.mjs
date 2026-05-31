@@ -84,7 +84,7 @@ async function main() {
 
     runJsonCase('CLI-SMOKE-009 copy', ['copy', keyA, keyB, '--no-overwrite', '--json'], (payload) => {
       assertEqual(payload.success, true, 'copy should succeed');
-      assertEqual(payload.data?.targetKey, keyB, 'copy should return target key');
+      assertEqual(payload.data?.target, keyB, 'copy should return target');
       createdKeys.add(keyB);
     });
 
