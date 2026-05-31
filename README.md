@@ -1,8 +1,8 @@
 # aliyunoss-cli
 
-**文档版本**: 1.1.0
-**最后更新**: 2026-05-29 20:10 CST
-**变更摘要**: 更新为 CLI 主入口说明，补充安装、配置、核心命令、删除保护、验证命令和 MCP stdio 兼容策略。
+**文档版本**: 1.2.0
+**最后更新**: 2026-05-31 15:00 CST
+**变更摘要**: 补充 CLI 通过凭据 JSON 文件加载 OSS 配置的用法和示例。
 
 ## 应用说明
 
@@ -56,12 +56,27 @@ OSS_SECURE=true
 OSS_TIMEOUT=300
 ```
 
+也可以将 OSS 凭据写入本地 JSON 文件，并在任意需要 OSS 配置的 CLI 命令中传入 `--credentials <path>`：
+
+```json
+{
+  "accessKeyId": "your_access_key_id",
+  "accessKeySecret": "your_access_key_secret",
+  "bucket": "your_bucket_name",
+  "region": "oss-cn-beijing"
+}
+```
+
+支持的字段也包括 `OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`、`OSS_BUCKET`、`OSS_REGION` 这类环境变量风格字段，以及 `{ "oss": { ... } }` 嵌套格式。显式传入的 `--credentials` 优先级高于环境变量。
+
 校验配置：
 
 ```bash
 aliyunoss-cli validate-config
 aliyunoss-cli validate-config --json
+aliyunoss-cli validate-config --credentials ./credentials.json --json
 aliyunoss-cli health
+aliyunoss-cli health --credentials ./credentials.json
 ```
 
 配置校验和 JSON 输出会对密钥做脱敏处理，不输出完整 `accessKeySecret`。
@@ -74,6 +89,7 @@ aliyunoss-cli url documents/report.pdf --expires 3600
 aliyunoss-cli list --prefix documents/ --max-keys 100 --json
 aliyunoss-cli copy documents/a.pdf documents/b.pdf --no-overwrite
 aliyunoss-cli meta documents/report.pdf
+aliyunoss-cli list --credentials ./credentials.json --prefix documents/ --json
 ```
 
 删除命令默认有二次确认保护：
